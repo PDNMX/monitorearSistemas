@@ -1,0 +1,22 @@
+{
+  "SESEA_AGUASCALIENTES": {
+    "error": "Token no encontrado",
+    "status": "error",
+    "timestamp": "2025-02-05T17:53:56.279528"
+  },
+  "SESEA_JALISCO": {
+    "error": "Token no encontrado",
+    "status": "error",
+    "timestamp": "2025-02-05T17:53:56.280112"
+  },
+  "GUANAJUATO": {
+    "error": "Token no encontrado",
+    "status": "error",
+    "timestamp": "2025-02-05T17:53:56.280912"
+  },
+  "EDOMEX": {
+    "error": "Token no encontrado",
+    "status": "error",
+    "timestamp": "2025-02-05T17:53:56.281505"
+  }
+}
