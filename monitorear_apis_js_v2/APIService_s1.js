@@ -169,3 +169,18 @@ class APIService {
 // apiService.checkEndpoints();
 
 module.exports = APIService;
+
+const service = new APIService(
+  "../EndPointsAPIS/EndPoints_s1/endpointsS1.json", // Ruta del archivo de credenciales
+  "./resultados_s1/resultados.csv" // Ruta donde se guardará el CSV
+);
+service.checkEndpoints();
+
+/* 
+const APIService = require("./APIService_s1");
+const service = new APIService(
+  "../EndPointsAPIS/EndPoints_s1/endpointsS1.json", // Ruta del archivo de credenciales
+  "./resultados_s1/resultados.csv" // Ruta donde se guardará el CSV
+);
+service.checkEndpoints();
+*/
