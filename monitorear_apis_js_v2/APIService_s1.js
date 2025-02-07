@@ -14,6 +14,7 @@ class APIService {
     this.logger.level = "all";
     this.apiClient = axios.create({
       httpsAgent: new https.Agent({ rejectUnauthorized: false }),
+      timeout: 5000,
     });
   }
 
@@ -30,9 +31,7 @@ class APIService {
     } = endpoint;
 
     if (!token_url) {
-      this.logger.warn(
-        `No token URL provided for ${supplier_name} (${supplier_id})`
-      );
+      this.logger.warn(`No token URL for ${supplier_name} (${supplier_id})`);
       return null;
     }
 
@@ -58,7 +57,7 @@ class APIService {
       return response;
     } catch (error) {
       this.logger.error(
-        `Error getting token for ${supplier_name} (${supplier_id}):`,
+        `Token error for ${supplier_name} (${supplier_id}):`,
         error.message
       );
       return { error: error.message };
@@ -69,9 +68,6 @@ class APIService {
     const { supplier_id, supplier_name, url } = endpoint;
 
     if (!url) {
-      this.logger.warn(
-        `No main URL provided for ${supplier_name} (${supplier_id})`
-      );
       return {
         supplier_name,
         supplier_id,
@@ -113,10 +109,6 @@ class APIService {
         fecha_ejecucion: new Date().toISOString(),
       };
     } catch (error) {
-      this.logger.error(
-        `Error fetching data for ${supplier_name} (${supplier_id}):`,
-        error.message
-      );
       return {
         supplier_name,
         supplier_id,
@@ -127,23 +119,48 @@ class APIService {
     }
   }
 
+  async processBatch(endpoints, batchSize = 5) {
+    const results = [];
+    for (let i = 0; i < endpoints.length; i += batchSize) {
+      const batch = endpoints.slice(i, i + batchSize);
+      console.log(
+        `Processing batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(
+          endpoints.length / batchSize
+        )}`
+      );
+
+      const batchResults = await Promise.all(
+        batch.map((endpoint) => this.fetchData(endpoint))
+      );
+      results.push(...batchResults);
+    }
+    return results;
+  }
+
   async checkEndpoints() {
     try {
+      console.log(`Reading endpoints from ${this.credentialsPath}`);
       const endpointsData = JSON.parse(
         fs.readFileSync(this.credentialsPath, "utf8")
       );
+
       const validEndpoints = endpointsData.filter(
         (endpoint) => endpoint.url || endpoint.entities_url
       );
 
       if (validEndpoints.length === 0) {
-        this.logger.warn("No valid endpoints found with required URLs");
+        this.logger.warn("No valid endpoints found");
         return;
       }
 
-      const results = await Promise.all(
-        validEndpoints.map((endpoint) => this.fetchData(endpoint))
-      );
+      console.log(`Found ${validEndpoints.length} valid endpoints`);
+      const results = await this.processBatch(validEndpoints);
+
+      // Ensure output directory exists
+      const outputDir = path.dirname(this.outputPath);
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
 
       const csvWriter = createCsvWriter({
         path: this.outputPath,
@@ -160,27 +177,18 @@ class APIService {
       console.log(`Results written to ${this.outputPath}`);
     } catch (error) {
       this.logger.error("Error processing endpoints:", error.message);
+      throw error;
     }
   }
 }
 
-// Uso:
-// const apiService = new APIService("ruta/credenciales.json", "ruta/resultados.csv");
-// apiService.checkEndpoints();
-
-module.exports = APIService;
-
+// Uso
 const service = new APIService(
-  "../EndPointsAPIS/EndPoints_s1/endpointsS1.json", // Ruta del archivo de credenciales
-  "./resultados_s1/resultados.csv" // Ruta donde se guardará el CSV
+  "../EndPointsAPIS/EndPoints_s1/endpointsS1.json",
+  "./resultados/resultados.csv"
 );
-service.checkEndpoints();
 
-/* 
-const APIService = require("./APIService_s1");
-const service = new APIService(
-  "../EndPointsAPIS/EndPoints_s1/endpointsS1.json", // Ruta del archivo de credenciales
-  "./resultados_s1/resultados.csv" // Ruta donde se guardará el CSV
-);
-service.checkEndpoints();
-*/
+service
+  .checkEndpoints()
+  .then(() => console.log("Proceso completado"))
+  .catch((error) => console.error("Error en el proceso:", error));

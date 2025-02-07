@@ -1,0 +1,24 @@
+PROVEEDOR,ID,TOTAL_REGISTROS,STATUS,FECHA_EJECUCION
+Secretaría Ejecutiva del Sistema Estatal Anticorrupción de Aguascalientes,SESEA_AGUASCALIENTES,203302,Success,2025-02-07T02:00:55.651Z
+Secretaría Ejecutiva del Sistema Estatal Anticorrupción del Estado de Jalisco,SESEA_JALISCO,No disponible,timeout of 5000ms exceeded,2025-02-07T02:00:56.394Z
+Secretaría Ejecutiva del Sistema Estatal Anticorrupción de Guanajuato,GUANAJUATO,19081,Success,2025-02-07T02:00:52.680Z
+Secretaría Ejecutiva del Sistema Estatal Anticorrupción del Estado México,EDOMEX,No disponible,timeout of 5000ms exceeded,2025-02-07T02:00:55.921Z
+Secretaría Ejecutiva del Sistema Anticorrupción de Zacatecas,ZACATECAS,157683,Success,2025-02-07T02:00:52.173Z
+Secretaría Ejecutiva del Sistema Anticorrupción del Estado de Tlaxcala,TLAXCALA,61411,Success,2025-02-07T02:00:58.308Z
+Secretaría Ejecutiva del Sistema Anticorrupción del Estado de Quintana Roo,QUINTANAROO,No disponible,timeout of 5000ms exceeded,2025-02-07T02:01:01.661Z
+Secretaría Ejecutiva Del Sistema Estatal Anticorrupción Tabasco,TABASCO,200,Success,2025-02-07T02:00:57.132Z
+Secretaría Ejecutiva del Sistema Anticorrupción de San Luis Potosí,SANLUISPOTOSI,96069,Success,2025-02-07T02:00:59.845Z
+Secretaría Ejecutiva Sistema Estatal Anticorrupción de Baja California Sur,BajaCaliforniaSur,No disponible,timeout of 5000ms exceeded,2025-02-07T02:01:02.067Z
+Secretaría Ejecutiva Sistema Estatal Anticorrupción de Chihuahua,Chihuahua,No disponible,Request failed with status code 500,2025-02-07T02:01:02.288Z
+"Instituto Nacional de Transparencia, Acceso a la Información y Protección de Datos Personales",INAI,4934,Success,2025-02-07T02:01:04.454Z
+Secretaría Ejecutiva del Sistema Anticorrupción del Estado de Chiapas,Chiapas,No disponible,timeout of 5000ms exceeded,2025-02-07T02:01:07.386Z
+Secretaría Ejecutiva del Sistema Anticorrupción del Estado de Puebla,Puebla,No disponible,timeout of 5000ms exceeded,2025-02-07T02:01:07.077Z
+Instituto Nacional Electoral,INE,219356,Success,2025-02-07T02:01:02.827Z
+Secretaría Ejecutiva del Sistema Local Anticorrupción del Estado de Nayarit,SESLAN,6317,Success,2025-02-07T02:01:08.412Z
+Secretaría Ejecutiva del Sistema Estatal Anticorrupción del Estado de Michoacán,SESEAM,16252,Success,2025-02-07T02:01:08.682Z
+Secretaría Ejecutiva del Sistema Anticorrupción del Estado de Morelos,SAEM,No disponible,timeout of 5000ms exceeded,2025-02-07T02:01:12.773Z
+Secretaría Ejecutiva del Sistema Anticorrupción del Estado de Guerrero,SESAEG,99,Success,2025-02-07T02:01:08.368Z
+Comisión Nacional de los Derechos Humanos,CNDH,10520,Success,2025-02-07T02:01:09.503Z
+Secretaría de la Función Pública,SFP,No disponible,timeout of 5000ms exceeded,2025-02-07T02:01:17.905Z
+Secretaría Ejecutiva del Sistema Estatal y Municipal Anticorrupción del Estado de Sinaloa,SESEA_SINALOA,1252,Success,2025-02-07T02:01:16.863Z
+Secretaria Ejecutiva del Sistema Anticorrupción de Baja California,SESEA_BAJA_CALIFORNIA,79,Success,2025-02-07T02:01:13.670Z
