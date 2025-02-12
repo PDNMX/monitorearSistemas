@@ -16,7 +16,7 @@ const CONFIG = {
     __dirname,
     "../EndPointsAPIS/EndPoints_s1/endpointsS1.json"
   ),
-  RESULTS_DIR: path.join(__dirname, ruta_salida_archivos), //"resultados_s1"
+  RESULTS_DIR: path.join(__dirname, ruta_salida_archivos), // Usar la variable ruta_salida_archivos
   TIMEOUT: 300000, // 5 minutos timeout general
   SFP_TIMEOUT: 600000, // 10 minutos para SFP
   MAX_RETRIES: 5,
@@ -192,9 +192,29 @@ async function fetchSFPData() {
 class APIService {
   constructor() {
     this.resultsDir = CONFIG.RESULTS_DIR;
-    this.resultsFile = path.join(this.resultsDir, "resultados.txt");
+    this.dailyCSV = path.join(
+      this.resultsDir,
+      `resultados_${getFileDate()}.csv`
+    );
+    this.totalCSV = path.join(this.resultsDir, "resultados_total.csv");
     if (!fs.existsSync(this.resultsDir)) {
       fs.mkdirSync(this.resultsDir, { recursive: true });
+    }
+    this.initializeCSVFiles();
+  }
+
+  initializeCSVFiles() {
+    // Crear archivo diario con encabezados
+    if (!fs.existsSync(this.dailyCSV)) {
+      fs.writeFileSync(
+        this.dailyCSV,
+        "Fecha,Proveedor,ID,Total_Registros,Sistema\n"
+      );
+    }
+
+    // Crear archivo total con encabezados si no existe
+    if (!fs.existsSync(this.totalCSV)) {
+      fs.writeFileSync(this.totalCSV, "Fecha,Total_Registros,Sistema\n");
     }
   }
 
@@ -202,23 +222,30 @@ class APIService {
     const { supplier_name, supplier_id, total_records, error } = data;
     const timestamp = getFormattedDate();
 
-    const resultString = `
-Fecha: ${timestamp}
-Proveedor: ${supplier_name}
-ID: ${supplier_id}
-Total de registros: ${total_records}${error ? `\nError: ${error}` : ""}
--------------------------------------------`;
+    if (!error) {
+      // Guardar en archivo diario
+      const dailyRow = `"${timestamp}","${supplier_name}","${supplier_id}","${total_records}","${sistema}"\n`;
+      await fs.promises.appendFile(this.dailyCSV, dailyRow);
 
-    try {
-      await fs.promises.appendFile(this.resultsFile, resultString);
-      console.log(`
-        Proveedor: ${supplier_name}
-        ID: ${supplier_id}
-        Total de registros: ${total_records}
-        -------------------------------------------`);
-    } catch (error) {
-      logger.error(`Error guardando en archivo: ${error.message}`);
+      // Acumular total de registros para el archivo total
+      this.accumulatedTotal =
+        (this.accumulatedTotal || 0) +
+        (parseInt(total_records.replace(/,/g, "")) || 0);
     }
+
+    console.log(`
+      Proveedor: ${supplier_name}
+      ID: ${supplier_id}
+      Total de registros: ${total_records}
+      ${error ? `Error: ${error}` : ""}
+      -------------------------------------------`);
+  }
+
+  async saveTotalResults() {
+    const timestamp = getFormattedDate();
+    const totalRow = `"${timestamp}","${this.accumulatedTotal.toLocaleString()}","${sistema_total}"\n`;
+    await fs.promises.appendFile(this.totalCSV, totalRow);
+    logger.info(`Total de registros guardado en ${this.totalCSV}`);
   }
 
   async getToken(endpoint) {
@@ -292,8 +319,7 @@ Total de registros: ${total_records}${error ? `\nError: ${error}` : ""}
         };
 
         const result = await retryOperation(operation);
-        const total_records =
-          result.pagination?.totalRows ?? result.total ?? "No disponible";
+        const total_records = result.pagination?.totalRows ?? "No disponible";
 
         await this.saveResult({
           supplier_name,
@@ -341,7 +367,6 @@ Total de registros: ${total_records}${error ? `\nError: ${error}` : ""}
         `Error obteniendo datos para ${supplier_name} (${supplier_id}):`,
         error.message
       );
-
       await this.saveResult({
         supplier_name,
         supplier_id,
