@@ -16,7 +16,7 @@ const CONFIG = {
     __dirname,
     "../EndPointsAPIS/EndPoints_s1/endpointsS1.json"
   ),
-  RESULTS_DIR: path.join(__dirname, ruta_salida_archivos), // Usar la variable ruta_salida_archivos
+  RESULTS_DIR: path.join(__dirname, ruta_salida_archivos),
   TIMEOUT: 300000, // 5 minutos timeout general
   SFP_TIMEOUT: 600000, // 10 minutos para SFP
   MAX_RETRIES: 5,
@@ -155,7 +155,7 @@ async function fetchSFPData() {
       headers,
       data,
       validateStatus: function (status) {
-        return status >= 200 && status < 500; // Acepta cualquier respuesta no 5xx
+        return status >= 200 && status < 500;
       },
     });
 
@@ -192,14 +192,19 @@ async function fetchSFPData() {
 class APIService {
   constructor() {
     this.resultsDir = CONFIG.RESULTS_DIR;
-    this.dailyCSV = path.join(
-      this.resultsDir,
-      `resultados_${getFileDate()}.csv`
-    );
-    this.totalCSV = path.join(this.resultsDir, "resultados_total.csv");
     if (!fs.existsSync(this.resultsDir)) {
       fs.mkdirSync(this.resultsDir, { recursive: true });
     }
+
+    // Inicializar archivos CSV
+    this.dailyCSV = path.join(
+      this.resultsDir,
+      `resultados_${sistema}_${getFileDate()}.csv`
+    );
+    this.totalCSV = path.join(this.resultsDir, "registros_totales.csv");
+    this.accumulatedTotal = 0;
+
+    // Crear archivos CSV si no existen
     this.initializeCSVFiles();
   }
 
@@ -223,22 +228,25 @@ class APIService {
     const timestamp = getFormattedDate();
 
     if (!error) {
+      // Asegurarse de que total_records sea una cadena
+      const totalRecordsStr = String(total_records);
+
       // Guardar en archivo diario
-      const dailyRow = `"${timestamp}","${supplier_name}","${supplier_id}","${total_records}","${sistema}"\n`;
+      const dailyRow = `"${timestamp}","${supplier_name}","${supplier_id}","${totalRecordsStr}","${sistema}"\n`;
       await fs.promises.appendFile(this.dailyCSV, dailyRow);
 
-      // Acumular total de registros para el archivo total
-      this.accumulatedTotal =
-        (this.accumulatedTotal || 0) +
-        (parseInt(total_records.replace(/,/g, "")) || 0);
+      // Acumular total de registros
+      // Primero convertir a string y luego limpiar las comas
+      const numericTotal = parseInt(totalRecordsStr.replace(/[^\d]/g, "")) || 0;
+      this.accumulatedTotal += numericTotal;
     }
 
     console.log(`
-      Proveedor: ${supplier_name}
-      ID: ${supplier_id}
-      Total de registros: ${total_records}
-      ${error ? `Error: ${error}` : ""}
-      -------------------------------------------`);
+        Proveedor: ${supplier_name}
+        ID: ${supplier_id}
+        Total de registros: ${total_records}
+        ${error ? `Error: ${error}` : ""}
+        -------------------------------------------`);
   }
 
   async saveTotalResults() {
@@ -367,6 +375,7 @@ class APIService {
         `Error obteniendo datos para ${supplier_name} (${supplier_id}):`,
         error.message
       );
+
       await this.saveResult({
         supplier_name,
         supplier_id,
@@ -384,6 +393,7 @@ class APIService {
       const endpointsData = JSON.parse(
         fs.readFileSync(CONFIG.ENDPOINTS_PATH, "utf8")
       );
+
       const validEndpoints = endpointsData.filter(
         (endpoint) => endpoint.url || endpoint.entities_url
       );
