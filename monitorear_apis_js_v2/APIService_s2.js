@@ -44,7 +44,7 @@ class APIService {
       fs.mkdirSync(this.resultsDir, { recursive: true });
     }
 
-    // Inicializar archivo de resultados
+    // Inicializar archivos de resultados
     this.resultsFile = path.join(
       this.resultsDir,
       `resultados_s2_${getFileDate()}.csv`
@@ -107,6 +107,12 @@ class APIService {
       logger.info(
         `Total de registros guardado: ${this.totalRecords.toLocaleString()}`
       );
+
+      // Mostrar el total en consola
+      console.log(
+        `\nTotal de registros: ${this.totalRecords.toLocaleString()}`
+      );
+      console.log(`Fecha de ejecución: ${timestamp}`);
     } catch (error) {
       logger.error(`Error guardando total de registros: ${error.message}`);
     }
@@ -278,9 +284,13 @@ class APIService {
         await this.fetchData(endpoint);
       }
 
+      // Guardar y mostrar el total de registros
+      await this.saveTotalRecords();
+
       const endTimestamp = getFormattedDate();
       logger.info(`=== EJECUCIÓN FINALIZADA: ${endTimestamp} ===`);
       console.log(`\nResultados guardados en: ${this.resultsFile}`);
+      console.log(`Total de registros guardado en: ${this.totalFile}`);
     } catch (error) {
       logger.error(
         "Error reading or processing endpoints.json:",
