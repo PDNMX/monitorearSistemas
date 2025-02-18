@@ -16,6 +16,27 @@ const apiClient = axios.create({
   }),
 });
 
+// Cliente específico para Puebla
+const pueblaClient = axios.create({
+  timeout: 30000,
+  headers: {
+    "User-Agent":
+      "Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0",
+    Accept: "application/json, text/plain, */*",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Content-Type": "application/json",
+    Origin: "https://www.plataformadigitalnacional.org",
+    Connection: "keep-alive",
+    Referer: "https://www.plataformadigitalnacional.org/",
+    "Sec-Fetch-Dest": "empty",
+    "Sec-Fetch-Mode": "cors",
+    "Sec-Fetch-Site": "same-site",
+    Priority: "u=0",
+    TE: "trailers",
+  },
+});
+
 // Función helper para obtener timestamp formateado
 const getFormattedDate = () => {
   const date = new Date();
@@ -29,6 +50,69 @@ const getFormattedDate = () => {
     second: "2-digit",
   });
 };
+
+async function fetchPueblaData() {
+  try {
+    logger.info("Iniciando consulta a Puebla...");
+    const response = await pueblaClient.post(
+      "https://api.plataformadigitalnacional.org/s2/api/v1/search",
+      {
+        page: 1,
+        pageSize: 10,
+        supplier_id: "PUEBLA",
+      }
+    );
+
+    // Verificar y loguear la respuesta completa para debugging
+    logger.info(
+      "Respuesta completa de Puebla:",
+      JSON.stringify(response.data, null, 2)
+    );
+
+    // Verificar específicamente el campo totalRows en pagination
+    if (response.data?.pagination?.totalRows !== undefined) {
+      const totalRegistros = response.data.pagination.totalRows;
+      logger.info(
+        `Consulta a Puebla exitosa. Total de registros: ${totalRegistros}`
+      );
+      return {
+        success: true,
+        data: {
+          pagination: {
+            total: totalRegistros,
+          },
+        },
+      };
+    } else {
+      const error = new Error(
+        "Respuesta de Puebla sin datos de totalRows en pagination"
+      );
+      error.responseData = response.data;
+      throw error;
+    }
+  } catch (error) {
+    logger.error("Error detallado en consulta a Puebla:", {
+      message: error.message,
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+      config: {
+        url: error.config?.url,
+        method: error.config?.method,
+        headers: error.config?.headers,
+      },
+    });
+
+    return {
+      success: false,
+      error: {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      },
+    };
+  }
+}
 
 // Función helper para obtener fecha formateada para nombre de archivo
 const getFileDate = () => {
@@ -62,22 +146,24 @@ class APIService {
     if (!fs.existsSync(this.resultsFile)) {
       fs.writeFileSync(
         this.resultsFile,
-        "Fecha,Proveedor,ID,Total_Registros\n"
+        "Fecha,Proveedor,ID,Total_Registros,Error\n"
       );
     }
   }
 
   async saveResult(data) {
-    const { supplier_name, supplier_id, total_records } = data;
+    const { supplier_name, supplier_id, total_records, error } = data;
     const timestamp = getFormattedDate();
 
-    // Crear línea CSV
-    const csvLine = `"${timestamp}","${supplier_name}","${supplier_id}","${total_records}"\n`;
+    // Crear línea CSV incluyendo información de error si existe
+    const csvLine = `"${timestamp}","${supplier_name}","${supplier_id}","${total_records}"${
+      error ? `,"${error.message.replace(/"/g, '""')}"` : ""
+    }\n`;
 
     try {
       await fs.promises.appendFile(this.resultsFile, csvLine);
 
-      if (total_records !== "No disponible") {
+      if (total_records !== "No disponible" && !error) {
         const numericTotal =
           parseInt(String(total_records).replace(/[^\d]/g, "")) || 0;
         this.totalRecords += numericTotal;
@@ -87,6 +173,7 @@ class APIService {
         Proveedor: ${supplier_name}
         ID: ${supplier_id}
         Total de registros: ${total_records}
+        ${error ? `Error: ${error.message}` : ""}
         -------------------------------------------`);
     } catch (error) {
       logger.error(`Error guardando en archivo: ${error.message}`);
@@ -187,12 +274,29 @@ class APIService {
   async fetchData(endpoint) {
     const { supplier_id, supplier_name, url, type } = endpoint;
 
-    if (!url) {
-      logger.warn(`No main URL provided for ${supplier_name} (${supplier_id})`);
-      return;
-    }
-
     try {
+      if (supplier_id === "PUEBLA") {
+        const pueblaResult = await fetchPueblaData();
+
+        if (pueblaResult.success) {
+          await this.saveResult({
+            supplier_name:
+              "Secretaría Ejecutiva del Sistema Estatal Anticorrupción del Estado de Puebla",
+            supplier_id: "PUEBLA",
+            total_records: pueblaResult.data.pagination.total.toLocaleString(),
+          });
+        } else {
+          await this.saveResult({
+            supplier_name:
+              "Secretaría Ejecutiva del Sistema Estatal Anticorrupción del Estado de Puebla",
+            supplier_id: "PUEBLA",
+            total_records: "No disponible",
+            error: pueblaResult.error,
+          });
+        }
+        return;
+      }
+
       // Manejar SFP de manera diferente
       if (type === "GRAPHQL" && supplier_id === "SFP") {
         const sfpData = await this.fetchSFPData();
@@ -201,6 +305,13 @@ class APIService {
           supplier_id,
           total_records: sfpData.total || "No disponible",
         });
+        return;
+      }
+
+      if (!url) {
+        logger.warn(
+          `No main URL provided for ${supplier_name} (${supplier_id})`
+        );
         return;
       }
 
@@ -249,6 +360,11 @@ class APIService {
         supplier_name,
         supplier_id,
         total_records: "No disponible",
+        error: {
+          message: error.message,
+          status: error.response?.status,
+          data: error.response?.data,
+        },
       });
     }
   }
@@ -262,14 +378,24 @@ class APIService {
         fs.readFileSync(
           path.join(
             __dirname,
-            "../EndPointsAPIS/EndPoints_s2/endpointsS2.json"
+            "../EndPointsAPIS/EndPoints_s2/endpointsS2_original.json"
           ),
           "utf8"
         )
       );
 
-      const validEndpoints = endpointsData.filter(
-        (endpoint) => endpoint.url || endpoint.entities_url
+      // Agregar endpoint de Puebla
+      const pueblaEndpoint = {
+        supplier_id: "PUEBLA",
+        supplier_name:
+          "Secretaría Ejecutiva del Sistema Anticorrupción del Estado de Puebla",
+        type: "SPECIAL",
+      };
+
+      const allEndpoints = [pueblaEndpoint, ...endpointsData];
+      const validEndpoints = allEndpoints.filter(
+        (endpoint) =>
+          endpoint.url || endpoint.entities_url || endpoint.type === "SPECIAL"
       );
 
       if (validEndpoints.length === 0) {

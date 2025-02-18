@@ -203,6 +203,10 @@ class APIService {
       `resultados_${sistema}_${getFileDate()}.csv`
     );
     this.totalCSV = path.join(this.resultsDir, "registros_totales.csv");
+    this.errorLogCSV = path.join(
+      this.resultsDir,
+      `errores_${getFileDate()}.csv`
+    );
     this.accumulatedTotal = 0;
 
     // Crear archivos CSV si no existen
@@ -239,6 +243,26 @@ class APIService {
       // Acumular total de registros
       const numericTotal = parseInt(totalRecordsStr.replace(/[^\d]/g, "")) || 0;
       this.accumulatedTotal += numericTotal;
+    }
+
+    if (error) {
+      // Extraer información detallada del error
+      const errorType = error.name || "Error";
+      const errorMessage = error.message || "Unknown error";
+      const httpCode = error.response?.status || "N/A";
+      const errorDetails = JSON.stringify({
+        stack: error.stack,
+        config: error.config,
+        responseData: error.response?.data,
+      }).replace(/"/g, '""'); // Escapar comillas dobles para CSV
+
+      // Guardar en archivo de errores
+      const errorRow = `"${timestamp}","${supplier_name}","${supplier_id}","${errorType}","${errorMessage}","${httpCode}","${errorDetails}"\n`;
+      await fs.promises.appendFile(this.errorLogCSV, errorRow);
+
+      logger.error(
+        `Error guardado para ${supplier_name} (${supplier_id}): ${errorMessage}`
+      );
     }
 
     console.log(`
@@ -332,7 +356,7 @@ class APIService {
         await this.saveResult({
           supplier_name:
             supplier_id === "PUEBLA"
-              ? "Secretaría de la Función Pública de Puebla"
+              ? "Sesea de Puebla"
               : "Secretaría de la Función Pública",
           supplier_id,
           total_records: total_records.toLocaleString(),
