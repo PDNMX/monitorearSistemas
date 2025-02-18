@@ -356,7 +356,7 @@ class APIService {
         await this.saveResult({
           supplier_name:
             supplier_id === "PUEBLA"
-              ? "Sesea de Puebla"
+              ? "Secretaría Ejecutiva del Sistema Anticorrupción del Estado de Puebla"
               : "Secretaría de la Función Pública",
           supplier_id,
           total_records: total_records.toLocaleString(),
@@ -426,7 +426,8 @@ class APIService {
         },
         {
           supplier_id: "PUEBLA",
-          supplier_name: "Secretaría de la Función Pública de Puebla",
+          supplier_name:
+            "Secretaría Ejecutiva del Sistema Anticorrupción del Estado de Puebla",
           url: "https://api.plataformadigitalnacional.org/s1/v1/search",
         },
       ];

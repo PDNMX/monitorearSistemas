@@ -63,12 +63,6 @@ async function fetchPueblaData() {
       }
     );
 
-    // Verificar y loguear la respuesta completa para debugging
-    logger.info(
-      "Respuesta completa de Puebla:",
-      JSON.stringify(response.data, null, 2)
-    );
-
     // Verificar específicamente el campo totalRows en pagination
     if (response.data?.pagination?.totalRows !== undefined) {
       const totalRegistros = response.data.pagination.totalRows;
