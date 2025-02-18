@@ -4,6 +4,7 @@ const qs = require("qs");
 const log4js = require("log4js");
 const fs = require("fs");
 const path = require("path");
+const dotenv = require("dotenv");
 
 // Variables constantes para el nombre de los archivos
 const sistema = "Sistema1"; // Variable para el primer archivo
@@ -27,8 +28,8 @@ const CONFIG = {
 const logger = log4js.getLogger("numeralia");
 logger.level = "all";
 
-// Crear cliente específico para SFP
-const sfpClient = axios.create({
+// Crear cliente específico para SFP y Puebla
+const specialClient = axios.create({
   timeout: CONFIG.SFP_TIMEOUT,
   maxContentLength: Infinity,
   maxBodyLength: Infinity,
@@ -101,8 +102,8 @@ const retryOperation = async (
   throw lastError;
 };
 
-// Función específica para la petición de SFP
-async function fetchSFPData() {
+// Función para hacer peticiones especiales (SFP y Puebla)
+async function fetchSpecialData(supplier_id) {
   const url = "https://api.plataformadigitalnacional.org/s1/v1/search";
   const headers = {
     "User-Agent":
@@ -144,12 +145,12 @@ async function fetchSFPData() {
       totalIngresosNetosMax: "",
     },
     sort: {},
-    supplier_id: "SFP",
+    supplier_id: supplier_id === "PUEBLA" ? "Puebla" : supplier_id,
   };
 
   try {
-    logger.info("Iniciando petición a SFP...");
-    const response = await sfpClient({
+    logger.info(`Iniciando petición a ${supplier_id}...`);
+    const response = await specialClient({
       url,
       method: "POST",
       headers,
@@ -161,11 +162,11 @@ async function fetchSFPData() {
 
     if (response.data?.pagination?.totalRows !== undefined) {
       logger.info(
-        `Petición a SFP exitosa. Total de registros: ${response.data.pagination.totalRows}`
+        `Petición a ${supplier_id} exitosa. Total de registros: ${response.data.pagination.totalRows}`
       );
     } else {
       logger.warn(
-        "Respuesta de SFP recibida pero sin datos de totalRows en pagination:",
+        `Respuesta de ${supplier_id} recibida pero sin datos de totalRows en pagination:`,
         response.data
       );
     }
@@ -173,7 +174,7 @@ async function fetchSFPData() {
     return response.data;
   } catch (error) {
     logger.error(
-      `Error SFP detallado: ${JSON.stringify(
+      `Error ${supplier_id} detallado: ${JSON.stringify(
         {
           message: error.message,
           code: error.code,
@@ -236,7 +237,6 @@ class APIService {
       await fs.promises.appendFile(this.dailyCSV, dailyRow);
 
       // Acumular total de registros
-      // Primero convertir a string y luego limpiar las comas
       const numericTotal = parseInt(totalRecordsStr.replace(/[^\d]/g, "")) || 0;
       this.accumulatedTotal += numericTotal;
     }
@@ -309,7 +309,7 @@ class APIService {
   async fetchData(endpoint) {
     const { supplier_id, supplier_name, url } = endpoint;
 
-    if (!url) {
+    if (!url && !["SFP", "PUEBLA"].includes(supplier_id)) {
       logger.warn(
         `No hay URL principal para ${supplier_name} (${supplier_id})`
       );
@@ -317,12 +317,12 @@ class APIService {
     }
 
     try {
-      // Verificar si es el endpoint de SFP
-      if (supplier_id === "SFP") {
-        logger.info(`Iniciando petición a SFP...`);
+      // Verificar si es un endpoint especial (SFP o PUEBLA)
+      if (supplier_id === "SFP" || supplier_id === "PUEBLA") {
+        logger.info(`Iniciando petición a ${supplier_id}...`);
         const operation = async () => {
-          const result = await fetchSFPData();
-          logger.info(`Petición a SFP completada exitosamente`);
+          const result = await fetchSpecialData(supplier_id);
+          logger.info(`Petición a ${supplier_id} completada exitosamente`);
           return result;
         };
 
@@ -330,7 +330,10 @@ class APIService {
         const total_records = result.pagination?.totalRows ?? "No disponible";
 
         await this.saveResult({
-          supplier_name,
+          supplier_name:
+            supplier_id === "PUEBLA"
+              ? "Secretaría de la Función Pública de Puebla"
+              : "Secretaría de la Función Pública",
           supplier_id,
           total_records: total_records.toLocaleString(),
         });
@@ -390,28 +393,53 @@ class APIService {
       const startTimestamp = getFormattedDate();
       logger.info(`=== EJECUCIÓN INICIADA: ${startTimestamp} ===`);
 
+      // Crear endpoints especiales
+      const specialEndpoints = [
+        {
+          supplier_id: "SFP",
+          supplier_name: "Secretaría de la Función Pública",
+          url: "https://api.plataformadigitalnacional.org/s1/v1/search",
+        },
+        {
+          supplier_id: "PUEBLA",
+          supplier_name: "Secretaría de la Función Pública de Puebla",
+          url: "https://api.plataformadigitalnacional.org/s1/v1/search",
+        },
+      ];
+
+      // Obtener endpoints del archivo
       const endpointsData = JSON.parse(
         fs.readFileSync(CONFIG.ENDPOINTS_PATH, "utf8")
       );
 
-      const validEndpoints = endpointsData.filter(
-        (endpoint) => endpoint.url || endpoint.entities_url
+      // Filtrar endpoints excluyendo SFP y PUEBLA
+      const fileEndpoints = endpointsData.filter(
+        (endpoint) =>
+          endpoint.url && !["SFP", "PUEBLA"].includes(endpoint.supplier_id)
       );
 
-      if (validEndpoints.length === 0) {
-        logger.warn("No se encontraron endpoints válidos con URLs requeridas");
+      // Combinar todos los endpoints
+      const allEndpoints = [...specialEndpoints, ...fileEndpoints];
+
+      if (allEndpoints.length === 0) {
+        logger.warn("No se encontraron endpoints válidos");
         return;
       }
 
-      console.log(`Procesando ${validEndpoints.length} endpoints...\n`);
+      console.log(`Procesando ${allEndpoints.length} endpoints...\n`);
 
       // Reiniciar el total acumulado
       this.accumulatedTotal = 0;
 
-      // Procesar endpoints en grupos de 5 para evitar sobrecarga
+      // Procesar endpoints especiales primero
+      for (const endpoint of specialEndpoints) {
+        await this.fetchData(endpoint);
+      }
+
+      // Procesar otros endpoints en grupos de 5 para evitar sobrecarga
       const chunkSize = 5;
-      for (let i = 0; i < validEndpoints.length; i += chunkSize) {
-        const chunk = validEndpoints.slice(i, i + chunkSize);
+      for (let i = 0; i < fileEndpoints.length; i += chunkSize) {
+        const chunk = fileEndpoints.slice(i, i + chunkSize);
         await Promise.all(chunk.map((endpoint) => this.fetchData(endpoint)));
       }
 
