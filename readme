@@ -1,13 +1,4 @@
 # 🌟 API Service Data Collector
-
-<div align="center">
-
-![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
-![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
-![Axios](https://img.shields.io/badge/axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white)
-
-</div>
-
 ## 📋 Descripción
 
 Este proyecto consiste en tres scripts de servicio (`APIService_s1.js`, `APIService_s2.js`, y `APIService_s3.js`) diseñados para recolectar datos de diferentes endpoints. Los scripts pueden ejecutarse individualmente o en conjunto a través del archivo `index.js`.
@@ -31,13 +22,13 @@ npm >= 6.x
 
 ### Configuración del Archivo .env
 
-Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
+Crear un archivo `.env` en la raíz del proyecto con las siguientes variables pero sustituyendo las rutas de los archivos de entrada:
 
 ```env
 # Variables de entrada
-ruta_endpoints_s1="/EndPointsAPIS/EndPoints_s1/endpointsS1.json"
-ruta_endpoints_s2="/EndPointsAPIS/EndPoints_s2/endpointsS2_original.json"
-ruta_endpoints_s3="/EndPointsAPIS/EndPoints_s3/endpointsS3_original.json"
+ruta_endpoints_s1="/EndPoints_s1/endpointsS1.json"
+ruta_endpoints_s2="/EndPoints_s2/endpointsS2.json"
+ruta_endpoints_s3="/EndPoints_s3/endpointsS3.json"
 
 # Variables de salida
 salida_s1="resultados_s1"
@@ -58,9 +49,9 @@ proyecto/
 │   ├── EndPoints_s1/
 │   │   └── endpointsS1.json
 │   ├── EndPoints_s2/
-│   │   └── endpointsS2_original.json
+│   │   └── endpointsS2.json
 │   └── EndPoints_s3/
-│       └── endpointsS3_original.json
+│       └── endpointsS3.json
 └── resultados/
     ├── resultados_s1/
     ├── resultados_s2/
