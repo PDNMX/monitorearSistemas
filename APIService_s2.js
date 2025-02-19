@@ -132,18 +132,31 @@ class APIService {
     );
     this.totalFile = path.join(this.resultsDir, "total_registros.csv");
 
+    this.errorFile = path.join(
+      this.resultsDir,
+      `errores_s2_${getFileDate()}.csv`
+    );
+
     // Inicializar contador de registros totales
     this.totalRecords = 0;
 
-    this.initializeResultsFile();
+    this.initializeFiles();
   }
 
-  initializeResultsFile() {
-    // Crear archivo con encabezados si no existe
+  initializeFiles() {
+    // Crear archivo principal con encabezados si no existe
     if (!fs.existsSync(this.resultsFile)) {
       fs.writeFileSync(
         this.resultsFile,
-        "Fecha,Proveedor,ID,Total_Registros,Error\n"
+        "Fecha,Proveedor,ID,Total_Registros\n"
+      );
+    }
+
+    // Crear archivo de errores con encabezados si no existe
+    if (!fs.existsSync(this.errorFile)) {
+      fs.writeFileSync(
+        this.errorFile,
+        "Fecha,Proveedor,ID,Mensaje_Error,Codigo_HTTP,Detalles\n"
       );
     }
   }
@@ -152,28 +165,41 @@ class APIService {
     const { supplier_name, supplier_id, total_records, error } = data;
     const timestamp = getFormattedDate();
 
-    // Crear línea CSV incluyendo información de error si existe
-    const csvLine = `"${timestamp}","${supplier_name}","${supplier_id}","${total_records}"${
-      error ? `,"${error.message.replace(/"/g, '""')}"` : ""
-    }\n`;
-
     try {
+      // Siempre escribir en el archivo principal con "No disponible" si hay error
+      const csvLine = `"${timestamp}","${supplier_name}","${supplier_id}","${
+        error ? "No disponible" : total_records
+      }"\n`;
       await fs.promises.appendFile(this.resultsFile, csvLine);
 
-      if (total_records !== "No disponible" && !error) {
+      // Si hay error, escribirlo en el archivo de errores
+      if (error) {
+        const errorLine = `"${timestamp}","${supplier_name}","${supplier_id}","${error.message.replace(
+          /"/g,
+          '""'
+        )}","${error.status || "N/A"}","${JSON.stringify(
+          error.data || {}
+        ).replace(/"/g, '""')}"\n`;
+        await fs.promises.appendFile(this.errorFile, errorLine);
+
+        logger.error(
+          `Error en ${supplier_name} (${supplier_id}): ${error.message}`
+        );
+      } else if (total_records !== "No disponible") {
         const numericTotal =
           parseInt(String(total_records).replace(/[^\d]/g, "")) || 0;
         this.totalRecords += numericTotal;
       }
 
+      // Log en consola
       console.log(`
         Proveedor: ${supplier_name}
         ID: ${supplier_id}
-        Total de registros: ${total_records}
-        ${error ? `Error: ${error.message}` : ""}
+        Total de registros: ${error ? "No disponible" : total_records}
+        ${error ? `(Error registrado en archivo de errores)` : ""}
         -------------------------------------------`);
     } catch (error) {
-      logger.error(`Error guardando en archivo: ${error.message}`);
+      logger.error(`Error guardando resultados: ${error.message}`);
     }
   }
 
