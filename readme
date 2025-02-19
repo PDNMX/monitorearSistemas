@@ -1,0 +1,149 @@
+# 🌟 API Service Data Collector
+
+<div align="center">
+
+![JavaScript](https://img.shields.io/badge/javascript-%23323330.svg?style=for-the-badge&logo=javascript&logoColor=%23F7DF1E)
+![NodeJS](https://img.shields.io/badge/node.js-6DA55F?style=for-the-badge&logo=node.js&logoColor=white)
+![Axios](https://img.shields.io/badge/axios-5A29E4?style=for-the-badge&logo=axios&logoColor=white)
+
+</div>
+
+## 📋 Descripción
+
+Este proyecto consiste en tres scripts de servicio (`APIService_s1.js`, `APIService_s2.js`, y `APIService_s3.js`) diseñados para recolectar datos de diferentes endpoints. Los scripts pueden ejecutarse individualmente o en conjunto a través del archivo `index.js`.
+
+## 🚀 Características
+
+- ✨ Recolección automatizada de datos de múltiples endpoints
+- 📊 Generación de archivos CSV con resultados
+- 🔄 Manejo de errores y registro detallado
+- 📝 Logging completo de operaciones
+- ⚡ Ejecución individual o conjunta de servicios
+
+## 🛠️ Configuración
+
+### Requisitos Previos
+
+```bash
+node >= 14.x
+npm >= 6.x
+```
+
+### Configuración del Archivo .env
+
+Crear un archivo `.env` en la raíz del proyecto con las siguientes variables:
+
+```env
+# Variables de entrada
+ruta_endpoints_s1="/EndPointsAPIS/EndPoints_s1/endpointsS1.json"
+ruta_endpoints_s2="/EndPointsAPIS/EndPoints_s2/endpointsS2_original.json"
+ruta_endpoints_s3="/EndPointsAPIS/EndPoints_s3/endpointsS3_original.json"
+
+# Variables de salida
+salida_s1="resultados_s1"
+salida_s2="resultados_s2"
+salida_s3="resultados_s3"
+```
+
+### Estructura de Directorios
+
+```
+proyecto/
+├── .env
+├── index.js
+├── APIService_s1.js
+├── APIService_s2.js
+├── APIService_s3.js
+├── EndPointsAPIS/
+│   ├── EndPoints_s1/
+│   │   └── endpointsS1.json
+│   ├── EndPoints_s2/
+│   │   └── endpointsS2_original.json
+│   └── EndPoints_s3/
+│       └── endpointsS3_original.json
+└── resultados/
+    ├── resultados_s1/
+    ├── resultados_s2/
+    └── resultados_s3/
+```
+
+## 💻 Uso
+
+### Ejecución Individual
+
+Para ejecutar cada servicio individualmente:
+
+```bash
+node APIService_s1.js
+node APIService_s2.js
+node APIService_s3.js
+```
+
+### Ejecución Conjunta
+
+Para ejecutar todos los servicios:
+
+```bash
+node index.js
+```
+
+## 📁 Archivos de Salida
+
+Cada servicio genera los siguientes archivos en su respectivo directorio de salida:
+
+```
+resultados_sX/
+├── resultados_sX_[fecha].csv    # Resultados diarios
+├── total_registros.csv          # Totales acumulados
+└── errores_sX_[fecha].csv       # Registro de errores
+```
+
+## 📊 Formato de Archivos CSV
+
+### resultados_sX_[fecha].csv
+```csv
+Fecha,Proveedor,ID,Total_Registros
+```
+
+### total_registros.csv
+```csv
+Fecha,Total_Registros
+```
+
+### errores_sX_[fecha].csv
+```csv
+Fecha,Proveedor,ID,Mensaje_Error,Codigo_HTTP,Detalles
+```
+
+## ⚠️ Manejo de Errores
+
+- Los errores detallados se registran en archivos separados
+- El archivo principal marca registros con error como "No disponible"
+- Se mantiene un log completo de todas las operaciones
+
+## 🔍 Logging
+
+El sistema utiliza `log4js` para mantener un registro detallado de:
+- ✅ Operaciones exitosas
+- ❌ Errores y excepciones
+- ⏱️ Tiempos de ejecución
+- 📝 Detalles de respuestas
+
+## 👥 Contribución
+
+Las contribuciones son bienvenidas. Por favor, asegúrese de:
+1. Hacer fork del repositorio
+2. Crear una rama para su feature
+3. Hacer commit de sus cambios
+4. Hacer push a la rama
+5. Crear un Pull Request
+
+## 📜 Licencia
+
+Este proyecto está bajo la licencia MIT. Ver el archivo `LICENSE` para más detalles.
+
+---
+
+<div align="center">
+Desarrollado con ❤️ por el equipo de desarrollo
+</div>
