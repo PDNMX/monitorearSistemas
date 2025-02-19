@@ -6,17 +6,15 @@ const fs = require("fs");
 const path = require("path");
 const dotenv = require("dotenv");
 
+dotenv.config();
+
 // Variables constantes para el nombre de los archivos
-const sistema = "Sistema1"; // Variable para el primer archivo
-const sistema_total = "SistemaTotal"; // Variable para el archivo acumulativo
-const ruta_salida_archivos = "resultados_s1"; // Ruta de salida de los archivos
+const sistema_total = "Sistema_1"; // Variable para el archivo acumulativo
+const ruta_salida_archivos = process.env.salida_s1; // Ruta de salida de los archivos
 
 // Configuración de rutas y timeouts
 const CONFIG = {
-  ENDPOINTS_PATH: path.join(
-    __dirname,
-    "../EndPointsAPIS/EndPoints_s1/endpointsS1.json"
-  ),
+  ENDPOINTS_PATH: path.join(__dirname, process.env.ruta_endpoints_s1),
   RESULTS_DIR: path.join(__dirname, ruta_salida_archivos),
   TIMEOUT: 300000, // 5 minutos timeout general
   SFP_TIMEOUT: 600000, // 10 minutos para SFP
@@ -200,7 +198,7 @@ class APIService {
     // Inicializar archivos CSV
     this.dailyCSV = path.join(
       this.resultsDir,
-      `resultados_${sistema}_${getFileDate()}.csv`
+      `resultados_sistema1_${getFileDate()}.csv`
     );
     this.totalCSV = path.join(this.resultsDir, "registros_totales.csv");
     this.errorLogCSV = path.join(
@@ -216,15 +214,12 @@ class APIService {
   initializeCSVFiles() {
     // Crear archivo diario con encabezados
     if (!fs.existsSync(this.dailyCSV)) {
-      fs.writeFileSync(
-        this.dailyCSV,
-        "Fecha,Proveedor,ID,Total_Registros,Sistema\n"
-      );
+      fs.writeFileSync(this.dailyCSV, "Fecha,Proveedor,ID,Total_Registros\n");
     }
 
     // Crear archivo total con encabezados si no existe
     if (!fs.existsSync(this.totalCSV)) {
-      fs.writeFileSync(this.totalCSV, "Fecha,Total_Registros,Sistema\n");
+      fs.writeFileSync(this.totalCSV, "Fecha,Total_Registros\n");
     }
   }
 
@@ -237,7 +232,7 @@ class APIService {
       const totalRecordsStr = String(total_records);
 
       // Guardar en archivo diario
-      const dailyRow = `"${timestamp}","${supplier_name}","${supplier_id}","${totalRecordsStr}","${sistema}"\n`;
+      const dailyRow = `"${timestamp}","${supplier_name}","${supplier_id}","${totalRecordsStr}"\n`;
       await fs.promises.appendFile(this.dailyCSV, dailyRow);
 
       // Acumular total de registros
@@ -440,7 +435,9 @@ class APIService {
       // Filtrar endpoints excluyendo SFP y PUEBLA
       const fileEndpoints = endpointsData.filter(
         (endpoint) =>
-          endpoint.url && !["SFP", "PUEBLA"].includes(endpoint.supplier_id)
+          endpoint.url &&
+          endpoint.supplier_id !== "PUEBLA" &&
+          endpoint.supplier_id !== "SFP"
       );
 
       // Combinar todos los endpoints

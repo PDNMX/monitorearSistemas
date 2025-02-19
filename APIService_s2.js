@@ -4,6 +4,9 @@ const qs = require("qs");
 const log4js = require("log4js");
 const fs = require("fs");
 const path = require("path");
+const dotenv = require("dotenv");
+
+dotenv.config();
 
 // Configurar logging
 const logger = log4js.getLogger("numeralia");
@@ -370,10 +373,7 @@ class APIService {
 
       const endpointsData = JSON.parse(
         fs.readFileSync(
-          path.join(
-            __dirname,
-            "../EndPointsAPIS/EndPoints_s2/endpointsS2_original.json"
-          ),
+          path.join(__dirname, process.env.ruta_endpoints_s2),
           "utf8"
         )
       );
