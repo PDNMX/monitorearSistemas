@@ -3,6 +3,7 @@
     "axios": "^1.7.9",
     "csv-writer": "^1.6.0",
     "dotenv": "^16.4.7",
+    "exceljs": "^4.4.0",
     "fs": "^0.0.1-security",
     "https": "^1.0.0",
     "log4js": "^6.9.1",
