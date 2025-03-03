@@ -25,15 +25,21 @@ npm >= 6.x
 Crear un archivo `.env` en la raíz del proyecto con las siguientes variables pero sustituyendo las rutas de los archivos de entrada:
 
 ```env
-# Variables de entrada
-ruta_endpoints_s1="/EndPoints_s1/endpointsS1.json"
-ruta_endpoints_s2="/EndPoints_s2/endpointsS2.json"
-ruta_endpoints_s3="/EndPoints_s3/endpointsS3.json"
+# Variables de entrada para el s1
+url_proveedores_s1 = "https://api.plataformadigitalnacional.org/s1/v1/providers"
+url_busqueda_s1 = "https://api.plataformadigitalnacional.org/s1/v1/search"
 
-# Variables de salida
-salida_s1="resultados_s1"
-salida_s2="resultados_s2"
-salida_s3="resultados_s3"
+# Variables de entrada para el s2
+url_busqueda_s2 = "https://api.plataformadigitalnacional.org/s2/api/v1/summary"
+
+# Variables de entrada para el s3
+url_proveedores_s3 = "https://api.plataformadigitalnacional.org/s3-wrapper/api/v1/providers"
+url_busqueda_s3 = "https://api.plataformadigitalnacional.org/s3-wrapper/api/v1/"
+
+# variables de salida
+salida_s1 = "./resultados_s1"
+salida_s2 = "./resultados_s2"
+salida_s3 = "./resultados_s3"
 ```
 
 ### Estructura de Directorios
