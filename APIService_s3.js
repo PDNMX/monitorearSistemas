@@ -32,32 +32,33 @@ async function getFaltasData(providerId, endpoint) {
     );
 
     return {
-      fecha_ejecucion: moment().format("YYYY-MM-DD"),
-      entidad: providerId,
-      endpoint: endpoint,
+      fecha_ejecucion: moment().format("YYYY-MM-DD HH:mm:ss"),
+      ente_publico: providerId,
       total_registros: response.data.pagination.totalItems || 0,
-      error: "",
+      estatus: "Disponible",
+      // Guardamos el endpoint solo para uso interno (no aparecerá en CSV)
+      _endpoint: endpoint,
     };
   } catch (error) {
     return {
-      fecha_ejecucion: moment().format("YYYY-MM-DD"),
-      entidad: providerId,
-      endpoint: endpoint,
+      fecha_ejecucion: moment().format("YYYY-MM-DD HH:mm:ss"),
+      ente_publico: providerId,
       total_registros: 0,
-      error: error.message,
+      estatus: `No disponible/${error.message}`,
+      // Guardamos el endpoint solo para uso interno (no aparecerá en CSV)
+      _endpoint: endpoint,
     };
   }
 }
 
 async function createDetailCsvWriter(endpoint) {
   return createCsvWriter({
-    path: path.join(OUTPUT_DIR, `resultados_s3_${endpoint}.csv`),
+    path: path.join(OUTPUT_DIR, `s3_${endpoint}.csv`),
     header: [
       { id: "fecha_ejecucion", title: "FECHA_EJECUCION" },
-      { id: "entidad", title: "ENTIDAD" },
-      { id: "endpoint", title: "ENDPOINT" },
+      { id: "ente_publico", title: "ENTE_PUBLICO" },
       { id: "total_registros", title: "TOTAL_REGISTROS" },
-      { id: "error", title: "ERROR" },
+      { id: "estatus", title: "ESTATUS" },
     ],
   });
 }
@@ -75,6 +76,23 @@ async function createSummaryCsvWriter() {
 
 async function main() {
   try {
+    // Verificar si las variables de entorno existen
+    if (!process.env.salida_s3) {
+      throw new Error("La variable de entorno 'salida_s3' no está definida");
+    }
+
+    if (!process.env.url_proveedores_s3) {
+      throw new Error(
+        "La variable de entorno 'url_proveedores_s3' no está definida"
+      );
+    }
+
+    if (!process.env.url_busqueda_s3) {
+      throw new Error(
+        "La variable de entorno 'url_busqueda_s3' no está definida"
+      );
+    }
+
     // Asegurar que el directorio de salida existe
     const fs = require("fs");
     if (!fs.existsSync(OUTPUT_DIR)) {
@@ -114,7 +132,7 @@ async function main() {
         0
       );
       summaryResults.push({
-        fecha_ejecucion: moment().format("YYYY-MM-DD"),
+        fecha_ejecucion: moment().format("YYYY-MM-DD HH:mm:ss"),
         endpoint: endpoint,
         total_registros: totalRegistros,
       });
@@ -123,9 +141,39 @@ async function main() {
     // Escribir archivo de resumen
     const summaryCsvWriter = await createSummaryCsvWriter();
     await summaryCsvWriter.writeRecords(summaryResults);
-    console.log("Resumen guardado en resumen_consultas.csv");
+    console.log("Resumen guardado en resumen_s3_consultas.csv");
   } catch (error) {
     console.error("Error general en el script:", error.message);
+
+    try {
+      // Intentar registrar el error en un archivo especial
+      const fs = require("fs");
+      const errorFilePath = path.join(OUTPUT_DIR || "./output", "error_s3.csv");
+
+      // Crear directorio si no existe
+      const outputDir = OUTPUT_DIR || "./output";
+      if (!fs.existsSync(outputDir)) {
+        fs.mkdirSync(outputDir, { recursive: true });
+      }
+
+      // Crear el archivo de error si no existe
+      if (!fs.existsSync(errorFilePath)) {
+        fs.writeFileSync(
+          errorFilePath,
+          "FECHA_EJECUCION,ENTE_PUBLICO,TOTAL_REGISTROS,ESTATUS\n"
+        );
+      }
+
+      // Registrar el error
+      const errorLine = `${moment().format(
+        "YYYY-MM-DD HH:mm:ss"
+      )},"ERROR_GENERAL",0,"No disponible/${error.message}"\n`;
+      fs.appendFileSync(errorFilePath, errorLine);
+
+      console.log(`Error registrado en ${errorFilePath}`);
+    } catch (fileError) {
+      console.error("No se pudo registrar el error:", fileError.message);
+    }
   }
 }
 

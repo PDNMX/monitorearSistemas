@@ -9,7 +9,7 @@ const CONFIG = {
   // Ruta donde se guardará el archivo
   outputPath: process.env.salida_s2,
   // Nombre del archivo CSV
-  csvFileName: "resultados_s2_procedimientos_contratacion.csv",
+  csvFileName: "s2_procedimientos.csv",
   // URL de la API
   summaryUrl: process.env.url_busqueda_s2,
 };
@@ -22,13 +22,16 @@ function ensureDirectoryExists(dirPath) {
   }
 }
 
-// Función para obtener la fecha actual en formato YYYY-MM-DD
-function getCurrentDate() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, "0");
-  const day = String(today.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+// Función para obtener la fecha y hora actual en formato YYYY-MM-DD HH:MM
+function getCurrentDateTime() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 }
 
 // Función para formatear correctamente un campo CSV
@@ -60,7 +63,7 @@ function appendToCSV(filePath, data) {
   if (!fileExists) {
     fs.writeFileSync(
       filePath,
-      "FECHA_EJECUCION,ENTIDAD,TOTAL_REGISTROS,ERROR\n"
+      "FECHA_EJECUCION,ENTE_PUBLICO,TOTAL_REGISTROS,ESTATUS\n"
     );
   }
 
@@ -71,7 +74,7 @@ function appendToCSV(filePath, data) {
 
 // Función principal
 async function main() {
-  const currentDate = getCurrentDate();
+  const currentDateTime = getCurrentDateTime();
 
   try {
     // Verificar si las variables de entorno existen
@@ -121,34 +124,35 @@ async function main() {
     for (const item of summaryData) {
       const supplierId = item.supplier_id || "";
       let totalRows = "";
-      let errorMsg = "";
+      let status = "Disponible"; // Por defecto asumimos que está disponible
 
-      // Verificar si item.error es true
+      // Verificar si item.error es true o si hay algún problema con totalRows
       if (item.error === true) {
         totalRows = "ERROR";
-        errorMsg = "Error reportado por la API";
+        status = "No disponible/Error reportado por la API";
       } else {
         // Verificar si totalRows existe y es un número
         if (item.totalRows !== undefined) {
           if (typeof item.totalRows === "number" && !isNaN(item.totalRows)) {
             totalRows = item.totalRows;
+            // Incluso si totalRows es 0, consideramos que está disponible según los nuevos requisitos
           } else {
             totalRows = "ERROR";
-            errorMsg = `El valor de totalRows no es un número: ${item.totalRows}`;
+            status = `No disponible/El valor de totalRows no es un número: ${item.totalRows}`;
           }
         } else {
           totalRows = 0;
-          errorMsg = "El campo totalRows no existe en la respuesta";
+          status = "No disponible/El campo totalRows no existe en la respuesta";
         }
       }
 
       // Crear línea para CSV usando nuestra función de formateo
       const csvLine =
         [
-          formatCSVField(currentDate),
+          formatCSVField(currentDateTime),
           formatCSVField(supplierId),
           formatCSVField(totalRows),
-          formatCSVField(errorMsg),
+          formatCSVField(status),
         ].join(",") + "\n";
 
       // Agregar al archivo CSV
@@ -173,22 +177,17 @@ async function main() {
 
       // Agregar detalles adicionales si están disponibles
       if (error.response) {
-        const responseDetails = {
-          status: error.response.status,
-          statusText: error.response.statusText,
-          data: error.response.data,
-        };
-
-        errorMessage += ` | Detalles: ${JSON.stringify(responseDetails)}`;
+        const responseInfo = `${error.response.status} ${error.response.statusText}`;
+        errorMessage += ` (${responseInfo})`;
       }
 
       // Escribir el error general en el CSV utilizando nuestra función de formateo
       const csvLine =
         [
-          formatCSVField(currentDate),
+          formatCSVField(currentDateTime),
           formatCSVField("ERROR_GENERAL"),
           formatCSVField("ERROR"),
-          formatCSVField(errorMessage),
+          formatCSVField(`No disponible/${errorMessage}`),
         ].join(",") + "\n";
 
       appendToCSV(csvFilePath, csvLine);

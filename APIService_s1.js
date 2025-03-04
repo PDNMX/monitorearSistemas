@@ -9,7 +9,7 @@ const CONFIG = {
   // Ruta donde se guardarán los archivos (modifica según necesites)
   outputPath: process.env.salida_s1,
   // Nombres de los archivos
-  detailsFileName: "resultados_s1_declaraciones.csv",
+  detailsFileName: "s1_declaraciones.csv",
   // URLs de la API
   providersUrl: process.env.url_proveedores_s1,
   searchUrl: process.env.url_busqueda_s1,
@@ -23,10 +23,37 @@ function ensureDirectoryExists(dirPath) {
   }
 }
 
-// Función para obtener la fecha actual en formato YYYY-MM-DD
-function getCurrentDate() {
-  const today = new Date();
-  return today.toISOString().split("T")[0];
+// Función para obtener la fecha y hora actual en formato YYYY-MM-DD HH:MM
+function getCurrentDateTime() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+  const seconds = String(now.getSeconds()).padStart(2, "0");
+  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+}
+
+// Función para formatear correctamente un campo CSV
+function formatCSVField(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  // Convertir a string si no lo es ya
+  const strValue = String(value);
+
+  // Si contiene comillas, comas o saltos de línea, escapar las comillas y encerrar en comillas
+  if (
+    strValue.includes('"') ||
+    strValue.includes(",") ||
+    strValue.includes("\n")
+  ) {
+    return `"${strValue.replace(/"/g, '""')}"`;
+  }
+
+  return strValue;
 }
 
 // Función para escribir en el archivo CSV
@@ -38,7 +65,7 @@ function appendToCSV(filePath, data) {
     if (path.basename(filePath) === CONFIG.detailsFileName) {
       fs.writeFileSync(
         filePath,
-        "FECHA_EJECUCION,ENTIDAD,TOTAL_REGISTROS,Error\n"
+        "FECHA_EJECUCION,ENTE_PUBLICO,TOTAL_REGISTROS,ESTATUS\n"
       );
     }
   }
@@ -49,9 +76,26 @@ function appendToCSV(filePath, data) {
 
 // Función principal
 async function main() {
-  const currentDate = getCurrentDate();
+  const currentDateTime = getCurrentDateTime();
 
   try {
+    // Verificar si las variables de entorno existen
+    if (!process.env.salida_s1) {
+      throw new Error("La variable de entorno 'salida_s1' no está definida");
+    }
+
+    if (!process.env.url_proveedores_s1) {
+      throw new Error(
+        "La variable de entorno 'url_proveedores_s1' no está definida"
+      );
+    }
+
+    if (!process.env.url_busqueda_s1) {
+      throw new Error(
+        "La variable de entorno 'url_busqueda_s1' no está definida"
+      );
+    }
+
     // Asegurar que existe el directorio
     ensureDirectoryExists(CONFIG.outputPath);
 
@@ -132,27 +176,53 @@ async function main() {
           const errorMessage = `El valor de totalRows no es un número: ${totalRows}`;
           console.error(`Error en ${supplierId}: ${errorMessage}`);
 
-          // Escribir en el archivo de detalles con error
-          const formattedError = String(totalRows)
-            .replace(/,/g, " ")
-            .replace(/\n/g, " ");
-          const detailsLine = `${currentDate},"${supplierId}","ERROR","${formattedError}"\n`;
-          appendToCSV(detailsFilePath, detailsLine);
+          // Crear línea para CSV usando nuestra función de formateo
+          const csvLine =
+            [
+              formatCSVField(currentDateTime),
+              formatCSVField(supplierId),
+              formatCSVField("ERROR"),
+              formatCSVField(
+                `No disponible/El valor de totalRows no es un número: ${totalRows}`
+              ),
+            ].join(",") + "\n";
+
+          appendToCSV(detailsFilePath, csvLine);
         } else {
-          // Escribir en el archivo de detalles sin error
-          const detailsLine = `${currentDate},"${supplierId}",${totalRows}\n`;
-          appendToCSV(detailsFilePath, detailsLine);
+          // Crear línea para CSV usando nuestra función de formateo
+          const csvLine =
+            [
+              formatCSVField(currentDateTime),
+              formatCSVField(supplierId),
+              formatCSVField(totalRows),
+              formatCSVField("Disponible"),
+            ].join(",") + "\n";
+
+          appendToCSV(detailsFilePath, csvLine);
           console.log(`${supplierId}: ${totalRows} filas`);
         }
       } catch (error) {
         console.error(`Error al consultar ${supplierId}:`, error.message);
 
-        // Escribir el error en el archivo de detalles
-        const errorMessage = error.message
-          .replace(/,/g, " ")
-          .replace(/\n/g, " ");
-        const detailsLine = `${currentDate},"${supplierId}","ERROR","${errorMessage}"\n`;
-        appendToCSV(detailsFilePath, detailsLine);
+        // Preparar mensaje de error para el CSV
+        let errorMessage = error.message.replace(/\n/g, " ");
+
+        // Agregar detalles adicionales si están disponibles
+        if (error.response) {
+          const responseInfo = `${error.response.status} ${error.response.statusText}`;
+          errorMessage += ` (${responseInfo})`;
+        }
+
+        // Crear línea para CSV usando nuestra función de formateo
+        const csvLine =
+          [
+            formatCSVField(currentDateTime),
+            formatCSVField(supplierId),
+            formatCSVField("ERROR"),
+            formatCSVField(`No disponible/${errorMessage}`),
+          ].join(",") + "\n";
+
+        appendToCSV(detailsFilePath, csvLine);
       }
 
       // Pequeña pausa para no saturar la API
@@ -162,7 +232,42 @@ async function main() {
     console.log(`\nProceso completado.`);
     console.log(`Detalles guardados en: ${detailsFilePath}`);
   } catch (error) {
-    console.error("Error general en el script:", error);
+    console.error("Error general en el script:", error.message);
+
+    try {
+      // Asegurar que podemos escribir el error incluso si hay problemas con las variables de entorno
+      const outputPath = CONFIG.outputPath || "./output";
+      ensureDirectoryExists(outputPath);
+
+      // Ruta completa al archivo CSV para registrar el error general
+      const detailsFilePath = path.join(outputPath, CONFIG.detailsFileName);
+
+      // Preparar mensaje de error para el CSV
+      let errorMessage = error.message;
+
+      // Agregar detalles adicionales si están disponibles
+      if (error.response) {
+        const responseInfo = `${error.response.status} ${error.response.statusText}`;
+        errorMessage += ` (${responseInfo})`;
+      }
+
+      // Crear línea para CSV usando nuestra función de formateo
+      const csvLine =
+        [
+          formatCSVField(currentDateTime),
+          formatCSVField("ERROR_GENERAL"),
+          formatCSVField("ERROR"),
+          formatCSVField(`No disponible/${errorMessage}`),
+        ].join(",") + "\n";
+
+      appendToCSV(detailsFilePath, csvLine);
+      console.error("Error registrado en el archivo CSV.");
+    } catch (fileError) {
+      console.error(
+        "No se pudo registrar el error en el archivo CSV:",
+        fileError.message
+      );
+    }
   }
 }
 
