@@ -1,7 +1,7 @@
 const axios = require("axios");
-const createCsvWriter = require("csv-writer").createObjectCsvWriter;
-const moment = require("moment");
+const fs = require("fs");
 const path = require("path");
+const moment = require("moment");
 const dotenv = require("dotenv");
 
 dotenv.config();
@@ -14,6 +14,77 @@ const COLLECTIONS = {
 };
 
 const OUTPUT_DIR = process.env.salida_s3;
+
+// Función para asegurar que exista el directorio
+function ensureDirectoryExists(dirPath) {
+  if (!fs.existsSync(dirPath)) {
+    fs.mkdirSync(dirPath, { recursive: true });
+    console.log(`Directorio creado: ${dirPath}`);
+  }
+}
+
+// Función para obtener la fecha actual en formato YYYY-MM-DD
+function getCurrentDate() {
+  return moment().format("YYYY-MM-DD");
+}
+
+// Función para obtener la hora actual en formato HH:MM:SS
+function getCurrentTime() {
+  return moment().format("HH:mm:ss");
+}
+
+// Función para formatear correctamente un campo CSV
+function formatCSVField(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  // Convertir a string si no lo es ya
+  const strValue = String(value);
+
+  // Si contiene comillas, comas o saltos de línea, escapar las comillas y encerrar en comillas
+  if (
+    strValue.includes('"') ||
+    strValue.includes(",") ||
+    strValue.includes("\n")
+  ) {
+    return `"${strValue.replace(/"/g, '""')}"`;
+  }
+
+  return strValue;
+}
+
+// Función para escribir en el archivo CSV
+function appendToCSV(filePath, data) {
+  const fileExists = fs.existsSync(filePath);
+
+  // Si el archivo no existe, crear con encabezados
+  if (!fileExists) {
+    fs.writeFileSync(
+      filePath,
+      "FECHA_EJECUCION,HORA_EJECUCION,ENTE_PUBLICO,TOTAL_REGISTROS,ESTATUS\n"
+    );
+  }
+
+  // Agregar datos
+  fs.appendFileSync(filePath, data);
+}
+
+// Función para escribir el resumen en el archivo CSV
+function appendToSummaryCSV(filePath, data) {
+  const fileExists = fs.existsSync(filePath);
+
+  // Si el archivo no existe, crear con encabezados
+  if (!fileExists) {
+    fs.writeFileSync(
+      filePath,
+      "FECHA_EJECUCION,HORA_EJECUCION,ENDPOINT,TOTAL_REGISTROS\n"
+    );
+  }
+
+  // Agregar datos
+  fs.appendFileSync(filePath, data);
+}
 
 async function fetchProviders() {
   try {
@@ -32,46 +103,23 @@ async function getFaltasData(providerId, endpoint) {
     );
 
     return {
-      fecha_ejecucion: moment().format("YYYY-MM-DD HH:mm:ss"),
+      fecha_ejecucion: getCurrentDate(),
+      hora_ejecucion: getCurrentTime(),
       ente_publico: providerId,
       total_registros: response.data.pagination.totalItems || 0,
       estatus: "Disponible",
-      // Guardamos el endpoint solo para uso interno (no aparecerá en CSV)
       _endpoint: endpoint,
     };
   } catch (error) {
     return {
-      fecha_ejecucion: moment().format("YYYY-MM-DD HH:mm:ss"),
+      fecha_ejecucion: getCurrentDate(),
+      hora_ejecucion: getCurrentTime(),
       ente_publico: providerId,
       total_registros: 0,
       estatus: `No disponible/${error.message}`,
-      // Guardamos el endpoint solo para uso interno (no aparecerá en CSV)
       _endpoint: endpoint,
     };
   }
-}
-
-async function createDetailCsvWriter(endpoint) {
-  return createCsvWriter({
-    path: path.join(OUTPUT_DIR, `s3_${endpoint}.csv`),
-    header: [
-      { id: "fecha_ejecucion", title: "FECHA_EJECUCION" },
-      { id: "ente_publico", title: "ENTE_PUBLICO" },
-      { id: "total_registros", title: "TOTAL_REGISTROS" },
-      { id: "estatus", title: "ESTATUS" },
-    ],
-  });
-}
-
-async function createSummaryCsvWriter() {
-  return createCsvWriter({
-    path: path.join(OUTPUT_DIR, "resumen_s3_consultas.csv"),
-    header: [
-      { id: "fecha_ejecucion", title: "FECHA_EJECUCION" },
-      { id: "endpoint", title: "ENDPOINT" },
-      { id: "total_registros", title: "TOTAL_REGISTROS" },
-    ],
-  });
 }
 
 async function main() {
@@ -94,19 +142,16 @@ async function main() {
     }
 
     // Asegurar que el directorio de salida existe
-    const fs = require("fs");
-    if (!fs.existsSync(OUTPUT_DIR)) {
-      fs.mkdirSync(OUTPUT_DIR, { recursive: true });
-      console.log(`Directorio creado: ${OUTPUT_DIR}`);
-    }
+    ensureDirectoryExists(OUTPUT_DIR);
 
     const providers = await fetchProviders();
     const allResults = {};
-    const summaryResults = [];
+    const summaryResults = {};
 
     // Inicializar resultados para cada endpoint
     for (const endpoint of Object.values(COLLECTIONS)) {
       allResults[endpoint] = [];
+      summaryResults[endpoint] = 0;
     }
 
     // Obtener datos para cada provider y endpoint
@@ -117,58 +162,76 @@ async function main() {
         console.log(`Consultando endpoint ${endpoint}...`);
         const result = await getFaltasData(provider.id, endpoint);
         allResults[endpoint].push(result);
+
+        // Sumar al total para el resumen
+        summaryResults[endpoint] += result.total_registros;
       }
     }
 
-    // Escribir archivos individuales para cada endpoint
+    // Escribir archivos individuales para cada endpoint (append mode)
     for (const [endpoint, results] of Object.entries(allResults)) {
-      const csvWriter = await createDetailCsvWriter(endpoint);
-      await csvWriter.writeRecords(results);
-      console.log(`Resultados guardados para ${endpoint}`);
+      const filePath = path.join(OUTPUT_DIR, `s3_${endpoint}.csv`);
 
-      // Calcular suma total para el resumen
-      const totalRegistros = results.reduce(
-        (sum, record) => sum + record.total_registros,
-        0
-      );
-      summaryResults.push({
-        fecha_ejecucion: moment().format("YYYY-MM-DD HH:mm:ss"),
-        endpoint: endpoint,
-        total_registros: totalRegistros,
-      });
+      for (const result of results) {
+        // Crear línea para CSV usando nuestra función de formateo
+        const csvLine =
+          [
+            formatCSVField(result.fecha_ejecucion),
+            formatCSVField(result.hora_ejecucion),
+            formatCSVField(result.ente_publico),
+            formatCSVField(result.total_registros),
+            formatCSVField(result.estatus),
+          ].join(",") + "\n";
+
+        // Agregar al archivo CSV
+        appendToCSV(filePath, csvLine);
+      }
+
+      console.log(`Resultados guardados para ${endpoint}`);
     }
 
-    // Escribir archivo de resumen
-    const summaryCsvWriter = await createSummaryCsvWriter();
-    await summaryCsvWriter.writeRecords(summaryResults);
-    console.log("Resumen guardado en resumen_s3_consultas.csv");
+    // Escribir archivo de resumen (append mode)
+    const summaryFilePath = path.join(OUTPUT_DIR, "resumen_s3_consultas.csv");
+    const currentDate = getCurrentDate();
+    const currentTime = getCurrentTime();
+
+    for (const [endpoint, totalRegistros] of Object.entries(summaryResults)) {
+      // Crear línea para CSV de resumen
+      const summaryLine =
+        [
+          formatCSVField(currentDate),
+          formatCSVField(currentTime),
+          formatCSVField(endpoint),
+          formatCSVField(totalRegistros),
+        ].join(",") + "\n";
+
+      // Agregar al archivo CSV de resumen
+      appendToSummaryCSV(summaryFilePath, summaryLine);
+    }
+
+    console.log(`Resumen guardado en resumen_s3_consultas.csv`);
   } catch (error) {
     console.error("Error general en el script:", error.message);
 
     try {
       // Intentar registrar el error en un archivo especial
-      const fs = require("fs");
       const errorFilePath = path.join(OUTPUT_DIR || "./output", "error_s3.csv");
 
       // Crear directorio si no existe
       const outputDir = OUTPUT_DIR || "./output";
-      if (!fs.existsSync(outputDir)) {
-        fs.mkdirSync(outputDir, { recursive: true });
-      }
-
-      // Crear el archivo de error si no existe
-      if (!fs.existsSync(errorFilePath)) {
-        fs.writeFileSync(
-          errorFilePath,
-          "FECHA_EJECUCION,ENTE_PUBLICO,TOTAL_REGISTROS,ESTATUS\n"
-        );
-      }
+      ensureDirectoryExists(outputDir);
 
       // Registrar el error
-      const errorLine = `${moment().format(
-        "YYYY-MM-DD HH:mm:ss"
-      )},"ERROR_GENERAL",0,"No disponible/${error.message}"\n`;
-      fs.appendFileSync(errorFilePath, errorLine);
+      const errorLine =
+        [
+          formatCSVField(getCurrentDate()),
+          formatCSVField(getCurrentTime()),
+          formatCSVField("ERROR_GENERAL"),
+          formatCSVField(0),
+          formatCSVField(`No disponible/${error.message}`),
+        ].join(",") + "\n";
+
+      appendToCSV(errorFilePath, errorLine);
 
       console.log(`Error registrado en ${errorFilePath}`);
     } catch (fileError) {

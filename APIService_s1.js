@@ -23,16 +23,22 @@ function ensureDirectoryExists(dirPath) {
   }
 }
 
-// Función para obtener la fecha y hora actual en formato YYYY-MM-DD HH:MM
-function getCurrentDateTime() {
+// Función para obtener la fecha actual en formato YYYY-MM-DD
+function getCurrentDate() {
   const now = new Date();
   const year = now.getFullYear();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+// Función para obtener la hora actual en formato HH:MM:SS
+function getCurrentTime() {
+  const now = new Date();
   const hours = String(now.getHours()).padStart(2, "0");
   const minutes = String(now.getMinutes()).padStart(2, "0");
   const seconds = String(now.getSeconds()).padStart(2, "0");
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  return `${hours}:${minutes}:${seconds}`;
 }
 
 // Función para formatear correctamente un campo CSV
@@ -65,7 +71,7 @@ function appendToCSV(filePath, data) {
     if (path.basename(filePath) === CONFIG.detailsFileName) {
       fs.writeFileSync(
         filePath,
-        "FECHA_EJECUCION,ENTE_PUBLICO,TOTAL_REGISTROS,ESTATUS\n"
+        "FECHA_EJECUCION,HORA_EJECUCION,ENTE_PUBLICO,TOTAL_REGISTROS,ESTATUS\n"
       );
     }
   }
@@ -76,7 +82,8 @@ function appendToCSV(filePath, data) {
 
 // Función principal
 async function main() {
-  const currentDateTime = getCurrentDateTime();
+  const currentDate = getCurrentDate();
+  const currentTime = getCurrentTime();
 
   try {
     // Verificar si las variables de entorno existen
@@ -179,7 +186,8 @@ async function main() {
           // Crear línea para CSV usando nuestra función de formateo
           const csvLine =
             [
-              formatCSVField(currentDateTime),
+              formatCSVField(currentDate),
+              formatCSVField(currentTime),
               formatCSVField(supplierId),
               formatCSVField("ERROR"),
               formatCSVField(
@@ -192,7 +200,8 @@ async function main() {
           // Crear línea para CSV usando nuestra función de formateo
           const csvLine =
             [
-              formatCSVField(currentDateTime),
+              formatCSVField(currentDate),
+              formatCSVField(currentTime),
               formatCSVField(supplierId),
               formatCSVField(totalRows),
               formatCSVField("Disponible"),
@@ -216,7 +225,8 @@ async function main() {
         // Crear línea para CSV usando nuestra función de formateo
         const csvLine =
           [
-            formatCSVField(currentDateTime),
+            formatCSVField(currentDate),
+            formatCSVField(currentTime),
             formatCSVField(supplierId),
             formatCSVField("ERROR"),
             formatCSVField(`No disponible/${errorMessage}`),
@@ -254,7 +264,8 @@ async function main() {
       // Crear línea para CSV usando nuestra función de formateo
       const csvLine =
         [
-          formatCSVField(currentDateTime),
+          formatCSVField(currentDate),
+          formatCSVField(currentTime),
           formatCSVField("ERROR_GENERAL"),
           formatCSVField("ERROR"),
           formatCSVField(`No disponible/${errorMessage}`),
