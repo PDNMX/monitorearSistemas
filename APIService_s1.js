@@ -41,7 +41,7 @@ function appendToCSV(filePath, data) {
   if (!fileExists) {
     fs.writeFileSync(
       filePath,
-      "FECHA_EJECUCION,HORA_EJECUCION,ENTE_PUBLICO,TOTAL_REGISTROS,ESTATUS\n"
+      "FECHA_EJECUCION,HORA_EJECUCION,ENTE,TOTAL_REGISTROS,ESTATUS\n"
     );
   }
   fs.appendFileSync(filePath, data);
@@ -61,7 +61,7 @@ async function main() {
     for (const provider of providers) {
       const supplierId = provider.supplier_id;
       const supplierName = providersMapping[supplierId] || supplierId;
-      console.log(`🔍 Consultando datos para proveedor: ${supplierId} (${supplierName})`);
+      console.log(`Consultando datos para proveedor: ${supplierId} (${supplierName})`);
 
       try {
         const searchResponse = await axios.post(CONFIG.searchUrl, { supplier_id: supplierId }, {
@@ -72,9 +72,9 @@ async function main() {
         const csvLine = [date, time, formatCSVField(supplierName), totalRows, "Disponible"].join(",") + "\n";
         appendToCSV(detailsFilePath, csvLine);
 
-        console.log(`✅ ${supplierName}: ${totalRows} filas encontradas.`);
+        console.log(`${supplierName}: ${totalRows} filas encontradas.`);
       } catch (error) {
-        console.error(`❌ Error al consultar ${supplierName}:`, error.message);
+        console.error(`Error al consultar ${supplierName}:`, error.message);
         appendToCSV(detailsFilePath, [date, time, formatCSVField(supplierName), "ERROR", error.message].join(",") + "\n");
       }
       await new Promise((resolve) => setTimeout(resolve, 500));
