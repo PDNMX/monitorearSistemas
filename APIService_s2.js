@@ -4,6 +4,9 @@ const axios = require("axios");
 const dotenv = require("dotenv");
 
 dotenv.config();
+
+const providersMapping = require("./utils/providers_catalog.json");
+
 // Configuración
 const CONFIG = {
   // Ruta donde se guardará el archivo
@@ -69,7 +72,7 @@ function appendToCSV(filePath, data) {
   if (!fileExists) {
     fs.writeFileSync(
       filePath,
-      "FECHA_EJECUCION,HORA_EJECUCION,ENTE_PUBLICO,TOTAL_REGISTROS,ESTATUS\n"
+      "FECHA_EJECUCION,HORA_EJECUCION,ENTE,TOTAL_REGISTROS,ESTATUS\n"
     );
   }
 
@@ -130,6 +133,7 @@ async function main() {
     // Procesar cada registro y escribir en el CSV
     for (const item of summaryData) {
       const supplierId = item.supplier_id || "";
+      const supplierName = providersMapping[supplierId] || supplierId;
       let totalRows = "";
       let status = "Disponible"; // Por defecto asumimos que está disponible
 
@@ -158,7 +162,7 @@ async function main() {
         [
           formatCSVField(currentDate),
           formatCSVField(currentTime),
-          formatCSVField(supplierId),
+          formatCSVField(supplierName),
           formatCSVField(totalRows),
           formatCSVField(status),
         ].join(",") + "\n";

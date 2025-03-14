@@ -6,6 +6,8 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
+const providersMapping = require("./utils/providers_catalog.json");
+
 const COLLECTIONS = {
   FALTAS_GRAVES_PERSONAS_MORALES: "faltas_graves_personas_morales",
   FALTAS_GRAVES_PERSONAS_FISICAS: "faltas_graves_personas_fisicas",
@@ -62,7 +64,7 @@ function appendToCSV(filePath, data) {
   if (!fileExists) {
     fs.writeFileSync(
       filePath,
-      "FECHA_EJECUCION,HORA_EJECUCION,ENTE_PUBLICO,TOTAL_REGISTROS,ESTATUS\n"
+      "FECHA_EJECUCION,HORA_EJECUCION,ENTE,TOTAL_REGISTROS,ESTATUS\n"
     );
   }
 
@@ -101,20 +103,21 @@ async function getFaltasData(providerId, endpoint) {
     const response = await axios.get(
       process.env.url_busqueda_s3 + `${endpoint}/${providerId}?page=1&limit=50`
     );
-
+    const providerName = providersMapping[providerId] || providerId;
     return {
       fecha_ejecucion: getCurrentDate(),
       hora_ejecucion: getCurrentTime(),
-      ente_publico: providerId,
+      ente_publico: providerName,
       total_registros: response.data.pagination.totalItems || 0,
       estatus: "Disponible",
       _endpoint: endpoint,
     };
   } catch (error) {
+    const providerName = providersMapping[providerId] || providerId;
     return {
       fecha_ejecucion: getCurrentDate(),
       hora_ejecucion: getCurrentTime(),
-      ente_publico: providerId,
+      ente_publico: providerName,
       total_registros: 0,
       estatus: `No disponible/${error.message}`,
       _endpoint: endpoint,
