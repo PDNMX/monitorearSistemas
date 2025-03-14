@@ -43,5 +43,21 @@
     "SINALOA": "Sinaloa",
     "VERACRUZ": "Veracruz",
     "YUCATAN": "Yucatán",
-    "COFECE": "COFECE"
+    "COFECE": "COFECE",
+    "SESEA_Guanajuato": "Guanajuato",
+    "SESEA_QUINTANA_ROO": "Quintana Roo",
+    "SESEA_Chihuahua": "Chihuahua",
+    "SESEA_Veracruz": "Veracruz",
+    "SESEA_Guerrero": "Guerrero",
+    "SESEA_Yucatán": "Yucatán",
+    "SESEA_Puebla": "Puebla",
+    "SESEA_Jalisco": "Jalisco",
+    "SESAEMM_Mex": "México",
+    "SESEA_Tlaxcala": "Tlaxcala",
+    "SESEA_BCS": "Baja California Sur",
+    "SESEA_Michoacan": "Michoacán",
+    "SESEA_DURANGO": "Durango",
+    "SESEA_Tabasco": "Tabasco",
+    "SESEA_Tamaulipas": "Tamaulipas",
+    "SESEA_BC": "Baja California Norte"
 }
