@@ -122,7 +122,7 @@ Fecha,Proveedor,ID,Mensaje_Error,Codigo_HTTP,Detalles
 
 Para ejecutar el script de comparación de registros, utilice el siguiente comando en su terminal:
 
-```bash
+bash
 python comparador.py <archivo_origen> <archivo_destino>
 
 ## 🔍 Logging
