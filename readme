@@ -118,6 +118,13 @@ Fecha,Proveedor,ID,Mensaje_Error,Codigo_HTTP,Detalles
 - El archivo principal marca registros con error como "No disponible"
 - Se mantiene un log completo de todas las operaciones
 
+## Uso del script de comparación
+
+Para ejecutar el script de comparación de registros, utilice el siguiente comando en su terminal:
+
+```bash
+python comparador.py <archivo_origen> <archivo_destino>
+
 ## 🔍 Logging
 
 El sistema utiliza `log4js` para mantener un registro detallado de:
