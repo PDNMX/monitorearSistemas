@@ -118,13 +118,6 @@ Fecha,Proveedor,ID,Mensaje_Error,Codigo_HTTP,Detalles
 - El archivo principal marca registros con error como "No disponible"
 - Se mantiene un log completo de todas las operaciones
 
-## Uso del script de comparación
-
-Para ejecutar el script de comparación de registros, utilice el siguiente comando en su terminal:
-
-bash
-python comparador.py <archivo_origen> <archivo_destino>
-
 ## 🔍 Logging
 
 El sistema utiliza `log4js` para mantener un registro detallado de:
@@ -132,6 +125,102 @@ El sistema utiliza `log4js` para mantener un registro detallado de:
 - ❌ Errores y excepciones
 - ⏱️ Tiempos de ejecución
 - 📝 Detalles de respuestas
+
+# Comparador de Registros por Periodo comparador.py
+
+Este script permite analizar y comparar registros de datos entre dos fechas específicas, calculando las diferencias y porcentajes de cambio para cada entidad pública.
+
+## Características
+
+- Compara registros entre fechas específicas definidas por el usuario
+- Identifica automáticamente el primer y último registro con valores válidos para cada entidad
+- Calcula diferencias y porcentajes de cambio en los registros
+- Maneja correctamente valores de error y datos faltantes
+- Normaliza nombres de entidades para gestionar diferentes formatos y variaciones
+- Genera un informe detallado con observaciones claras y precisas
+
+## Requisitos
+
+- Python 3.6 o superior
+- No requiere bibliotecas externas (usa solo módulos de la biblioteca estándar)
+
+## Uso del script
+
+Para ejecutar el script de comparación de registros, utilice el siguiente comando en su terminal:
+
+```bash
+python comparador.py <fecha_inicio> <fecha_fin> <archivo_origen> <archivo_destino>
+```
+
+Donde:
+- `comparador.py`: Es el nombre del archivo del script.
+- `<fecha_inicio>`: Fecha de inicio del periodo en formato YYYY-MM-DD (por ejemplo: 2025-03-16).
+- `<fecha_fin>`: Fecha de fin del periodo en formato YYYY-MM-DD (por ejemplo: 2025-03-20).
+- `<archivo_origen>`: Ruta al archivo CSV que contiene los datos históricos que desea analizar.
+- `<archivo_destino>`: Ruta donde se guardará el archivo CSV con los resultados del análisis.
+
+Ejemplo:
+```bash
+python comparador.py 2025-03-16 2025-03-20 resultados_s3/s3_faltas_graves_personas_fisicas.csv analisis/resultados_comparacion_s3_fisicas.csv
+```
+
+Este comando analizará los datos históricos del archivo `s3_faltas_graves_personas_fisicas.csv` ubicado en la carpeta `resultados_s3`, comparando el periodo entre el 16 y el 20 de marzo de 2025, y guardará los resultados del análisis en el archivo `resultados_comparacion_s3_fisicas.csv` dentro de la carpeta `analisis`.
+
+## Formato del archivo de entrada
+
+El script espera un archivo CSV con el siguiente formato:
+
+```
+FECHA_EJECUCION,HORA_EJECUCION,ENTE,TOTAL_REGISTROS,ESTATUS
+2025-03-16,12:57:14,Aguascalientes,1584,Disponible
+2025-03-16,12:57:14,Baja California Sur,80,Disponible
+...
+```
+
+Las columnas necesarias son:
+- `FECHA_EJECUCION`: Fecha en formato YYYY-MM-DD
+- `HORA_EJECUCION`: Hora en formato HH:MM:SS
+- `ENTE` o `ENTE_PUBLICO`: Nombre de la entidad
+- `TOTAL_REGISTROS`: Número de registros (puede contener "ERROR")
+- `ESTATUS`: Estado del registro (p.ej. "Disponible", "No disponible/Error reportado por la API")
+
+## Formato del archivo de salida
+
+El script generará un archivo CSV con las siguientes columnas:
+
+- `ENTE`: Nombre de la entidad
+- `FECHA INICIAL`: Fecha y hora del primer registro utilizado para la comparación
+- `FECHA FINAL`: Fecha y hora del último registro utilizado para la comparación
+- `REGISTROS INICIALES`: Número de registros en la fecha inicial
+- `REGISTROS FINALES`: Número de registros en la fecha final
+- `DIFERENCIA DE REGISTROS EN EL PERIODO`: Cambio en el número de registros
+- `PORCENTAJE DE CAMBIO`: Porcentaje de cambio respecto a los registros iniciales
+- `OBSERVACIONES`: Notas explicativas sobre los datos analizados
+
+## Funcionamiento
+
+El script realiza las siguientes operaciones:
+
+1. Lee los registros del archivo de entrada dentro del periodo especificado
+2. Agrupa los registros por entidad
+3. Para cada entidad:
+   - Encuentra el primer registro con valor numérico válido
+   - Encuentra el último registro con valor numérico válido
+   - Calcula la diferencia y el porcentaje de cambio entre ambos
+   - Añade observaciones relevantes sobre los datos
+4. Genera un archivo CSV con los resultados
+
+## Manejo de errores y casos especiales
+
+- Si un valor `TOTAL_REGISTROS` es "ERROR", el script lo ignora y busca otro registro con valor numérico válido
+- Si una entidad solo tiene valores de error, el script lo indica en las observaciones
+- Si solo existe un registro válido para una entidad en todo el periodo, se utiliza como valor inicial y final
+- Los nombres de entidades se normalizan para manejar variaciones (mayúsculas/minúsculas, espacios, guiones)
+- Las entidades que no tienen registros dentro del periodo no aparecen en el resultado
+
+## Contribuciones
+
+Las contribuciones son bienvenidas. Por favor, abra un issue para discutir cambios importantes antes de enviar un pull request.
 
 ## 👥 Contribución
 
