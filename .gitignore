@@ -17,6 +17,7 @@ monitorear_apis_js_v3
 resultados_s1/
 resultados_s2/
 resultados_s3/
+resultados_s6/
 datos_pdn/
 no_subir.json
 APIService_s1_old.js
@@ -28,3 +29,4 @@ analisis
 comparador_s1.py
 resultados_sistemas_monitoreo_18_03_2025.zip
 resultados_sistemas_monitoreo_19_03_2025.zip
+comandos_comparador.txt

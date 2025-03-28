@@ -4,13 +4,10 @@ const { exec } = require("child_process");
 const path = require("path");
 const dotenv = require("dotenv");
 
-dotenv.config();
-
-//console.log(`Directorio de scripts: ${process.env.directorio_scripts}`);
-
+dotenv.config({ path: path.join(__dirname, ".env") });
 // Definimos la ruta absoluta del directorio donde están los scripts
 //const SCRIPTS_DIR = process.env.directorio_scripts;
-const SCRIPTS_DIR = "/home/phoenix/sesna/desarrollo/otros/monitorear_api";
+const SCRIPTS_DIR = process.env.directorio_scripts;
 // Función para ejecutar un script con reintentos
 async function executeScriptWithRetry(script, maxRetries = 3) {
   let attempts = 0;
@@ -67,7 +64,12 @@ async function runScripts() {
   // Cambiamos al directorio de los scripts antes de ejecutarlos
   process.chdir(SCRIPTS_DIR);
 
-  const scripts = ["APIService_s1.js", "APIService_s2.js", "APIService_s3.js"];
+  const scripts = [
+    "APIService_s1.js",
+    "APIService_s2.js",
+    "APIService_s3.js",
+    "APIService_s6.js",
+  ];
   const results = [];
   let hasErrors = false;
 
