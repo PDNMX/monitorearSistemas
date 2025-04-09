@@ -47,6 +47,34 @@ function appendToCSV(filePath, data) {
   fs.appendFileSync(filePath, data);
 }
 
+function extractErrorDetails(error) {
+  let errorDetails = "Error desconocido";
+  
+  if (error.response) {
+    // La solicitud se realizó y el servidor respondió con un código de estado
+    // que cae fuera del rango 2xx
+    if (error.response.data && error.response.data.error) {
+      // Si el error viene en formato { error: { status, statusText, ... } }
+      const { status, statusText } = error.response.data.error;
+      errorDetails = `Estado: ${status}, Mensaje: ${statusText}`;
+    } else if (typeof error.response.data === 'object') {
+      // Si es otro formato de objeto de error
+      errorDetails = JSON.stringify(error.response.data);
+    } else {
+      // Si es un error simple
+      errorDetails = `Estado: ${error.response.status}, Mensaje: ${error.response.statusText}`;
+    }
+  } else if (error.request) {
+    // La solicitud se realizó pero no se recibió respuesta
+    errorDetails = "No se recibió respuesta del servidor";
+  } else {
+    // Ocurrió un error al configurar la solicitud
+    errorDetails = error.message;
+  }
+  
+  return formatCSVField(errorDetails);
+}
+
 async function main() {
   const { date, time } = getCurrentDateTime();
   ensureDirectoryExists(CONFIG.outputPath);
@@ -68,14 +96,30 @@ async function main() {
           headers: { "Content-Type": "application/json" },
         });
 
-        const totalRows = searchResponse.data.pagination?.totalRows || "0";
-        const csvLine = [date, time, formatCSVField(supplierName), totalRows, "Disponible"].join(",") + "\n";
-        appendToCSV(detailsFilePath, csvLine);
-
-        console.log(`${supplierName}: ${totalRows} filas encontradas.`);
+        // Verificar si hay errores en la respuesta
+        if (searchResponse.data && searchResponse.data.error) {
+          const errorDetails = typeof searchResponse.data.error === 'object' 
+            ? JSON.stringify(searchResponse.data.error) 
+            : searchResponse.data.error;
+          
+          console.error(`Error en la respuesta para ${supplierName}:`, errorDetails);
+          appendToCSV(
+            detailsFilePath, 
+            [date, time, formatCSVField(supplierName), "0", "Error", formatCSVField(errorDetails)].join(",") + "\n"
+          );
+        } else {
+          const totalRows = searchResponse.data.pagination?.totalRows || "0";
+          const csvLine = [date, time, formatCSVField(supplierName), totalRows, "Disponible", ""].join(",") + "\n";
+          appendToCSV(detailsFilePath, csvLine);
+          console.log(`${supplierName}: ${totalRows} filas encontradas.`);
+        }
       } catch (error) {
-        console.error(`Error al consultar ${supplierName}:`, error.message);
-        appendToCSV(detailsFilePath, [date, time, formatCSVField(supplierName), "ERROR", error.message].join(",") + "\n");
+        const errorDetails = extractErrorDetails(error);
+        console.error(`Error al consultar ${supplierName}:`, errorDetails);
+        appendToCSV(
+          detailsFilePath, 
+          [date, time, formatCSVField(supplierName), "0", "Error", errorDetails].join(",") + "\n"
+        );
       }
       await new Promise((resolve) => setTimeout(resolve, 500));
     }

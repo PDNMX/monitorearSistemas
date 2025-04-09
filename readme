@@ -128,12 +128,12 @@ El sistema utiliza `log4js` para mantener un registro detallado de:
 
 # Comparador de Registros por Periodo comparador.py
 
-Este script permite analizar y comparar registros de datos entre dos fechas específicas, calculando las diferencias y porcentajes de cambio para cada entidad pública.
+Este script permite analizar y comparar registros de datos entre dos fechas específicas, calculando las diferencias y porcentajes de cambio para cada Ente público.
 
 ## Características
 
 - Compara registros entre fechas específicas definidas por el usuario
-- Identifica automáticamente el primer y último registro con valores válidos para cada entidad
+- Identifica automáticamente el primer y último registro con valores válidos para cada Ente público
 - Calcula diferencias y porcentajes de cambio en los registros
 - Maneja correctamente valores de error y datos faltantes
 - Normaliza nombres de entidades para gestionar diferentes formatos y variaciones
