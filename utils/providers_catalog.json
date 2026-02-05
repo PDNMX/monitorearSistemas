@@ -59,5 +59,8 @@
   "SESEA_DURANGO": "Durango",
   "SESEA_Tabasco": "Tabasco",
   "SESEA_Tamaulipas": "Tamaulipas",
-  "SESEA_BC": "Baja California"
+  "SESEA_BC": "Baja California",
+  "SESEA_HIDALGO": "Hidalgo",
+  "SESEA_QUERETARO": "Querétaro",
+  "SESEA_CAMPECHE": "Campeche"
 }

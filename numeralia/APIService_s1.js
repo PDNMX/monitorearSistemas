@@ -3,10 +3,11 @@ const path = require("path");
 const axios = require("axios");
 const dotenv = require("dotenv");
 
+/* dotenv.config({path: path.join(process.cwd(), '.env')}); */
 dotenv.config();
 
 // Cargar el mapeo de proveedores desde el archivo JSON
-const providersMapping = require("./utils/providers_catalog.json");
+const providersMapping = require("../utils/providers_catalog.json");
 
 const CONFIG = {
   outputPath: process.env.salida_s1,

@@ -7,17 +7,10 @@ monitorear_apis_js/
 monitorear_apis_python/
 package-lock.json
 monitorear_apis_js_v2
-monitorear_apis_js_v2/resultados_s1
-monitorear_apis_js_v2/resultados_s2
-monitorear_apis_js_v2/resultados_s3
 monitorear_apis_js_v2/package-lock.json
 checkEndpoints_s1.js
 monitorear_apis_js_v3
 .env
-resultados_s1/
-resultados_s2/
-resultados_s3/
-resultados_s6/
 datos_pdn/
 no_subir.json
 APIService_s1_old.js
@@ -30,3 +23,4 @@ comparador_s1.py
 resultados_sistemas_monitoreo_18_03_2025.zip
 resultados_sistemas_monitoreo_19_03_2025.zip
 comandos_comparador.txt
+*csv
