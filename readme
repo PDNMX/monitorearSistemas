@@ -1,7 +1,7 @@
 # 🌟 API Service Data Collector
 ## 📋 Descripción
 
-Este proyecto consiste en tres scripts de servicio (`APIService_s1.js`, `APIService_s2.js`, y `APIService_s3.js`) diseñados para recolectar datos de diferentes endpoints. Los scripts pueden ejecutarse individualmente o en conjunto a través del archivo `index.js`.
+Este proyecto consiste en tres scripts de servicio (`APIService_s1.js`, `APIService_s2.js`, y `APIService_s3.js`) diseñados para recolectar datos de diferentes endpoints.
 
 ## 🚀 Características
 
@@ -37,31 +37,9 @@ url_proveedores_s3 = "https://api.plataformadigitalnacional.org/s3-wrapper/api/v
 url_busqueda_s3 = "https://api.plataformadigitalnacional.org/s3-wrapper/api/v1/"
 
 # variables de salida
-salida_s1 = "./resultados_s1"
-salida_s2 = "./resultados_s2"
-salida_s3 = "./resultados_s3"
-```
-
-### Estructura de Directorios
-
-```
-proyecto/
-├── .env
-├── index.js
-├── APIService_s1.js
-├── APIService_s2.js
-├── APIService_s3.js
-├── EndPointsAPIS/
-│   ├── EndPoints_s1/
-│   │   └── endpointsS1.json
-│   ├── EndPoints_s2/
-│   │   └── endpointsS2.json
-│   └── EndPoints_s3/
-│       └── endpointsS3.json
-└── resultados/
-    ├── resultados_s1/
-    ├── resultados_s2/
-    └── resultados_s3/
+salida_s1 = "./reports/resultados_s1"
+salida_s2 = "./reports/resultados_s2"
+salida_s3= "./reports/resultados_s3"
 ```
 
 ## 💻 Uso
@@ -71,18 +49,11 @@ proyecto/
 Para ejecutar cada servicio individualmente:
 
 ```bash
-node APIService_s1.js
-node APIService_s2.js
-node APIService_s3.js
+yarn s1-report
+yarn s2-report
+yarn s3-report
 ```
 
-### Ejecución Conjunta
-
-Para ejecutar todos los servicios:
-
-```bash
-node index.js
-```
 
 ## 📁 Archivos de Salida
 
@@ -237,4 +208,4 @@ Este proyecto está bajo la licencia MIT. Ver el archivo `LICENSE` para más det
 
 ---
 
-Desarrollado con ❤️ por Héctor Franco
+Desarrollado con ❤️ por Héctor Franco en colaboración con Andrés López
