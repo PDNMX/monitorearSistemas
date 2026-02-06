@@ -5,7 +5,7 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const providersMapping = require("./utils/providers_catalog.json");
+const providersMapping = require("../utils/providers_catalog.json");
 
 // Configuración
 const CONFIG = {

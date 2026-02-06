@@ -6,7 +6,7 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const providersMapping = require("./utils/providers_catalog.json");
+const providersMapping = require("../utils/providers_catalog.json");
 
 const COLLECTIONS = {
   FALTAS_GRAVES_PERSONAS_MORALES: "faltas_graves_personas_morales",

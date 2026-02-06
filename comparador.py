@@ -170,7 +170,7 @@ def analizar_cambios(fecha_inicio_str, fecha_fin_str, archivo_entrada, archivo_s
                     if registros_inicial > 0:
                         porcentaje = f"{(diferencia / registros_inicial) * 100:.2f}%"
                     else:
-                        porcentaje = "∞%" if diferencia > 0 else "0%"
+                        porcentaje = "0%" if diferencia > 0 else "0%"
                 else:
                     diferencia = "No calculable"
                     porcentaje = "No calculable"
