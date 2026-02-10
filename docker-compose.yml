@@ -1,0 +1,10 @@
+services:
+  numeralia:
+    build: .
+    container_name: numeralia
+    restart: unless-stopped
+    volumes:
+      - ./reports:/app/reports
+    env_file:
+      - .env
+    command: sh -c "yarn s1-report && yarn s2-report && yarn s3-report"

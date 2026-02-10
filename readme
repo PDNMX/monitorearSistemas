@@ -54,16 +54,14 @@ yarn s2-report
 yarn s3-report
 ```
 
+## Ejecución de scripts dentro de un contenedor Docker
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 
-## 📁 Archivos de Salida
+Para construir y levantar el contenedor Docker, acceda al directorio raíz del proyecto monitorearSistemas y ejecute los siguientes comandos:
 
-Cada servicio genera los siguientes archivos en su respectivo directorio de salida:
-
-```
-resultados_sX/
-├── resultados_sX_[fecha].csv    # Resultados diarios
-├── total_registros.csv          # Totales acumulados
-└── errores_sX_[fecha].csv       # Registro de errores
+```bash
+docker compose build
+docker compose up -d
 ```
 
 ## 📊 Formato de Archivos CSV
