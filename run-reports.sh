@@ -1,5 +1,5 @@
 #!/bin/sh
-
+cd /app
 echo "=== Iniciando reportes $(date) ==="
 
 echo "--- Ejecutando s1-report ---"
