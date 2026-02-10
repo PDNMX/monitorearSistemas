@@ -1,4 +1,6 @@
 {
+  "name": "numeralia_pdn",
+  "license": "MIT",
   "dependencies": {
     "axios": "^1.7.9",
     "csv-writer": "^1.6.0",
