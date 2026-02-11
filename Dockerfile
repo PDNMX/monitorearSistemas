@@ -11,6 +11,9 @@ RUN yarn install --frozen-lockfile
 
 COPY . .
 
+# 🔥 
+RUN sed -i 's/\r$//' /app/entrypoint.sh /app/run-reports.sh
+
 RUN chmod +x /app/entrypoint.sh /app/run-reports.sh
 
 ENTRYPOINT ["/app/entrypoint.sh"]
